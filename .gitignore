@@ -1,0 +1,18 @@
+# General
+.DS_Store
+node_modules/
+target/
+*.iml
+*.log
+*.session.sql
+.vscode/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Backend
+backend/target/
+
+# User uploaded images (not source code)
+backend/images/

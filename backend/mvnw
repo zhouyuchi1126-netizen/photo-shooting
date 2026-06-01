@@ -1,0 +1,20 @@
+#!/bin/bash
+# Apache Maven Wrapper script for Unix
+# This script downloads and runs Maven if not available locally
+
+export MAVEN_HOME="${MAVEN_HOME:-.}"
+export MAVEN_VERSION="3.9.6"
+
+# Download Maven if not present
+if [ ! -f "$MAVEN_HOME/bin/mvn" ]; then
+    echo "Downloading Maven $MAVEN_VERSION..."
+    mkdir -p "$MAVEN_HOME/.mvn/wrapper"
+    cd "$MAVEN_HOME/.mvn/wrapper"
+    
+    # For now, show instructions to install Maven
+    echo "Please install Maven 3.9.6 or later"
+    echo "Visit: https://maven.apache.org/install.html"
+    exit 1
+fi
+
+exec "$MAVEN_HOME/bin/mvn" "$@"

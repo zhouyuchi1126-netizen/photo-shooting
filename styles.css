@@ -1,0 +1,151 @@
+:root {
+  color-scheme: light;
+  font-family: "Helvetica Neue", Arial, "PingFang SC", "Noto Sans", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: #111111;
+  background: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: #ffffff;
+}
+
+body {
+  padding: 2rem;
+}
+
+.page-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.brand {
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.brand a {
+  color: #111111;
+  text-decoration: none;
+  margin-left: 0.5rem;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.site-nav a {
+  color: #111111;
+  text-decoration: none;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: minmax(280px, 320px) 1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.hero-block {
+  position: sticky;
+  top: 2rem;
+  align-self: start;
+}
+
+.hero-block h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(3rem, 5vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.hero-block p {
+  margin: 0;
+  max-width: 16rem;
+  color: #555555;
+}
+
+.work-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.work-card {
+  overflow: hidden;
+}
+
+.work-card a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.work-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.work-card:hover img {
+  transform: scale(1.02);
+}
+
+.work-meta {
+  margin-top: 0.85rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.site-footer {
+  margin-top: 3rem;
+  font-size: 0.95rem;
+  color: #444444;
+}
+
+@media (max-width: 980px) {
+  body {
+    padding: 1.5rem;
+  }
+
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-block {
+    position: static;
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .site-nav {
+    gap: 0.75rem;
+  }
+}

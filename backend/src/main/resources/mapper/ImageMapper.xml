@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.photoshoot.mapper.ImageMapper">
+    <select id="selectByAlbumId" resultType="com.example.photoshoot.model.Image">
+        SELECT id, album_id AS albumId, filename, filepath, uploaded_at AS uploadedAt
+        FROM image WHERE album_id = #{albumId} ORDER BY filename ASC
+    </select>
+    <insert id="insert">
+        INSERT INTO image (id, album_id, filename, filepath, uploaded_at)
+        VALUES (#{id}, #{albumId}, #{filename}, #{filepath}, NOW())
+    </insert>
+    <delete id="deleteByFilename">
+        DELETE FROM image WHERE album_id = #{albumId} AND filename = #{filename}
+    </delete>
+    <delete id="deleteByAlbumId">
+        DELETE FROM image WHERE album_id = #{albumId}
+    </delete>
+</mapper>
