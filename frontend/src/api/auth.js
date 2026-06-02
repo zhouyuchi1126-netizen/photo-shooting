@@ -30,3 +30,15 @@ export async function simulateWechatScan(ticket, data) {
   const response = await wechatApi.post(`/simulate/${ticket}`, data || {});
   return response.data;
 }
+
+const phoneApi = axios.create({ baseURL: '/api/auth/phone' });
+
+export async function sendSmsCode(phone) {
+  const response = await phoneApi.post('/send-code', { phone });
+  return response.data;
+}
+
+export async function phoneLogin(phone, code) {
+  const response = await phoneApi.post('/login', { phone, code });
+  return response.data;
+}

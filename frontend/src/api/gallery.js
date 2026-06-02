@@ -62,3 +62,8 @@ export async function setCover(groupId, imageName) {
   const res = await api.put(`/admin/groups/${groupId}/cover`, { imageName });
   return res.data;
 }
+
+export async function reorderImages(groupId, filenames) {
+  const res = await api.put(`/admin/groups/${groupId}/images/sort`, { filenames });
+  return res.data;
+}

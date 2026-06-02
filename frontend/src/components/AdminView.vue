@@ -97,14 +97,23 @@
             <button class="img-action-btn danger-btn" :disabled="!selectedUrls.size" @click="handleBatchDelete(group.id)">
               删除选中
             </button>
-            <span class="img-hint">单击图片设为封面 · 勾选多选删除</span>
+            <span class="img-hint">拖拽图片调整顺序 · 单击设封面 · 勾选删除</span>
           </div>
           <div class="img-grid" v-if="groupImages.length">
             <div
               class="img-item"
-              v-for="imgUrl in groupImages"
+              v-for="(imgUrl, idx) in groupImages"
               :key="imgUrl"
-              :class="{ 'is-cover': isCoverImage(group, imgUrl), 'is-selected': selectedUrls.has(imgUrl) }"
+              draggable="true"
+              :class="{
+                'is-cover': isCoverImage(group, imgUrl),
+                'is-selected': selectedUrls.has(imgUrl),
+                'drag-over': dragOverIdx === idx
+              }"
+              @dragstart="onDragStart(idx, $event)"
+              @dragover.prevent="onDragOver(idx)"
+              @dragleave="dragOverIdx = -1"
+              @drop="onDrop(idx)"
             >
               <img :src="imgUrl" alt="图片" @click="handleSetCover(group.id, imgUrl)" />
               <div class="cover-overlay" @click="handleSetCover(group.id, imgUrl)">
@@ -153,9 +162,9 @@
                 <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none"/>
                 <path d="M12 2a10 10 0 0 1 10 10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
               </svg>
-              {{ uploading ? '上传中...' : '选择文件' }}
+              {{ uploading ? '上传中...' : '上传文件' }}
             </button>
-            <button class="img-action-btn close-btn" @click="collapseGroup">关闭</button>
+            <button class="img-action-btn close-btn" @click="collapseGroup">保存</button>
           </div>
       </div>
     </div>
@@ -176,7 +185,8 @@ import {
   updateGroup as updateGroupApi,
   deleteGroup as deleteGroupApi,
   deleteImage as deleteImageApi,
-  setCover as setCoverApi
+  setCover as setCoverApi,
+  reorderImages as reorderImagesApi
 } from '../api/gallery';
 
 const groups = ref([]);
@@ -198,11 +208,38 @@ const expandedGroupId = ref(null);
 const groupImages = ref([]);
 const selectedUrls = ref(new Set());
 
+/* ---- 文件校验（大小 + 魔术字节） ---- */
+const ALLOWED_MAGIC = [
+  { magic: [0xFF, 0xD8, 0xFF], name: 'JPEG' },
+  { magic: [0x89, 0x50, 0x4E, 0x47], name: 'PNG' },
+  { magic: [0x42, 0x4D], name: 'BMP' },
+  { magic: [0x49, 0x49, 0x2A, 0x00], name: 'TIFF' },
+  { magic: [0x4D, 0x4D, 0x00, 0x2A], name: 'TIFF' },
+];
+
+function readFileHeader(file, len) {
+  return new Promise(r => {
+    const fr = new FileReader();
+    fr.onload = () => r(Array.from(new Uint8Array(fr.result)));
+    fr.onerror = () => r([]);
+    fr.readAsArrayBuffer(file.slice(0, len));
+  });
+}
+
+async function validateImageFile(file) {
+  if (file.size > 20 * 1024 * 1024)
+    return { ok: false, msg: `文件大小超过 20MB: ${file.name}` };
+  const header = await readFileHeader(file, 8);
+  const match = ALLOWED_MAGIC.some(t => t.magic.every((b, i) => header[i] === b));
+  if (!match)
+    return { ok: false, msg: `不支持的文件格式（仅 JPEG/PNG/BMP/TIFF）: ${file.name}` };
+  return { ok: true };
+}
+
 /* ---- 并发上传 + 每个文件进度条 ---- */
 const uploading = ref(false);
 const uploadItems = ref([]);
 let uploadId = 0;
-const MAX_FILE_SIZE = 90 * 1024 * 1024;
 const CONCURRENCY = 3;
 
 /* ---- 全选 ---- */
@@ -211,15 +248,44 @@ function toggleAll() {
   selectedUrls.value = allSelected.value ? new Set() : new Set(groupImages.value);
 }
 
+/* ---- 拖拽排序（放下即保存） ---- */
+const dragFromIdx = ref(-1);
+const dragOverIdx = ref(-1);
+
+function onDragStart(idx, e) {
+  dragFromIdx.value = idx;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(idx) {
+  dragOverIdx.value = idx;
+}
+
+async function onDrop(idx) {
+  dragOverIdx.value = -1;
+  if (dragFromIdx.value === idx) return;
+  const arr = [...groupImages.value];
+  const [moved] = arr.splice(dragFromIdx.value, 1);
+  arr.splice(idx, 0, moved);
+  groupImages.value = arr;
+  // 保存新顺序
+  const filenames = arr.map(u => u.substring(u.lastIndexOf('/') + 1));
+  try {
+    await reorderImagesApi(expandedGroupId.value, filenames);
+  } catch (e) {
+    console.error('排序保存失败', e);
+  }
+}
+
 async function uploadFiles(groupId, files) {
   const arr = Array.from(files);
-  const oversized = arr.filter(f => f.size > MAX_FILE_SIZE);
-  if (oversized.length) {
-    showToast(`文件过大: ${oversized.map(f => f.name).join(', ')}（单文件不超过 90MB）`);
-    return;
+
+  // 逐个校验
+  for (const f of arr) {
+    const v = await validateImageFile(f);
+    if (!v.ok) { showToast(v.msg); return; }
   }
 
-  // 初始化每个文件的上传项
   const items = arr.map(f => ({ id: ++uploadId, name: f.name, status: 'pending', percent: 0 }));
   uploadItems.value = items;
   uploading.value = true;
@@ -688,6 +754,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   transition: border-color 0.15s;
 }
 .img-item.is-selected { border-color: #111; }
+.img-item.drag-over { border-color: #111; border-style: dashed; background: #f5f5f5; }
 .img-item img {
   width: 100%; height: 100%;
   object-fit: cover; display: block;

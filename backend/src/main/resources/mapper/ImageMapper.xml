@@ -2,13 +2,17 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.photoshoot.mapper.ImageMapper">
     <select id="selectByAlbumId" resultType="com.example.photoshoot.model.Image">
-        SELECT id, album_id AS albumId, filename, filepath, uploaded_at AS uploadedAt
-        FROM image WHERE album_id = #{albumId} ORDER BY filename ASC
+        SELECT id, album_id AS albumId, filename, filepath, uploaded_at AS uploadedAt, sort_order AS sortOrder
+        FROM image WHERE album_id = #{albumId} ORDER BY sort_order ASC, filename ASC
     </select>
     <insert id="insert">
-        INSERT INTO image (id, album_id, filename, filepath, uploaded_at)
-        VALUES (#{id}, #{albumId}, #{filename}, #{filepath}, NOW())
+        INSERT INTO image (id, album_id, filename, filepath, uploaded_at, sort_order)
+        VALUES (#{id}, #{albumId}, #{filename}, #{filepath}, NOW(),
+                (SELECT COALESCE(MAX(sort_order),0)+1 FROM image AS t WHERE album_id = #{albumId}))
     </insert>
+    <update id="updateSortOrder">
+        UPDATE image SET sort_order = #{order} WHERE album_id = #{albumId} AND filename = #{filename}
+    </update>
     <delete id="deleteByFilename">
         DELETE FROM image WHERE album_id = #{albumId} AND filename = #{filename}
     </delete>

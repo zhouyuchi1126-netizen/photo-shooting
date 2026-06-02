@@ -58,6 +58,20 @@ public class UserService {
         return null;
     }
 
+    public User findOrCreatePhoneUser(String phone) {
+        User existing = userMapper.selectByUsername(phone);
+        if (existing != null) return existing;
+
+        User user = new User();
+        user.setId(UUID.randomUUID().toString());
+        user.setUsername(phone);
+        user.setDisplayName("用户" + phone.substring(phone.length() - 4));
+        user.setPassword(encrypt(UUID.randomUUID().toString()));
+        user.setRole("user");
+        userMapper.insertUser(user);
+        return user;
+    }
+
     public User findOrCreateWechatUser(String openid, String wechatId, String nickname) {
         // 先按 openid 查找
         User existing = userMapper.selectByWechatOpenid(openid);

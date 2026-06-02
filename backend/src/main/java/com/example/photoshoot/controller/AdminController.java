@@ -140,4 +140,25 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    @PutMapping("/groups/{groupId}/images/sort")
+    public ResponseEntity<?> reorderImages(
+            @RequestHeader(value = "X-User-Role", defaultValue = "user") String role,
+            @PathVariable String groupId,
+            @RequestBody Map<String, Object> payload) {
+        if (!"admin".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "无权限"));
+        }
+        @SuppressWarnings("unchecked")
+        List<String> filenames = (List<String>) payload.get("filenames");
+        if (filenames == null || filenames.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "图片列表不能为空"));
+        }
+        try {
+            galleryService.reorderImages(groupId, filenames);
+            return ResponseEntity.ok(Map.of("message", "排序已保存"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }

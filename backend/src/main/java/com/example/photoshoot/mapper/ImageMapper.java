@@ -10,4 +10,5 @@ public interface ImageMapper {
     void insert(Image image);
     void deleteByFilename(@Param("albumId") String albumId, @Param("filename") String filename);
     void deleteByAlbumId(@Param("albumId") String albumId);
+    void updateSortOrder(@Param("albumId") String albumId, @Param("filename") String filename, @Param("order") int order);
 }

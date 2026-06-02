@@ -61,7 +61,8 @@ public class PhotoShootingApplication {
                             "password VARCHAR(100) NOT NULL, " +
                             "display_name VARCHAR(100), " +
                             "role VARCHAR(50) NOT NULL DEFAULT 'user', " +
-                            "wechat_openid VARCHAR(100))");
+                            "wechat_openid VARCHAR(100), " +
+                            "phone VARCHAR(20))");
                 }
             } else {
                 // 迁移旧表：补充可能缺失的列
@@ -76,6 +77,13 @@ public class PhotoShootingApplication {
                     if (!columns.next()) {
                         try (Statement stmt = connection.createStatement()) {
                             stmt.executeUpdate("ALTER TABLE ps_user ADD COLUMN wechat_openid VARCHAR(100)");
+                        }
+                    }
+                }
+                try (ResultSet columns = meta.getColumns(null, null, "ps_user", "phone")) {
+                    if (!columns.next()) {
+                        try (Statement stmt = connection.createStatement()) {
+                            stmt.executeUpdate("ALTER TABLE ps_user ADD COLUMN phone VARCHAR(20)");
                         }
                     }
                 }
@@ -145,7 +153,18 @@ public class PhotoShootingApplication {
                             "album_id VARCHAR(100) NOT NULL, " +
                             "filename VARCHAR(200) NOT NULL, " +
                             "filepath VARCHAR(500) NOT NULL, " +
-                            "uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+                            "uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                            "sort_order INT DEFAULT 0)");
+                }
+            } else {
+                try (ResultSet columns = meta.getColumns(null, null, "image", "sort_order")) {
+                    if (!columns.next()) {
+                        try (Statement stmt = connection.createStatement()) {
+                            stmt.executeUpdate("ALTER TABLE image ADD COLUMN sort_order INT DEFAULT 0");
+                            // 为已有图片设置初始排序值
+                            stmt.executeUpdate("UPDATE image SET sort_order = 0");
+                        }
+                    }
                 }
             }
         }
@@ -211,8 +230,8 @@ public class PhotoShootingApplication {
                 String filepath = "/images/" + groupId + "/" + fname;
                 try (Statement stmt = connection.createStatement()) {
                     String imgId = UUID.randomUUID().toString();
-                    stmt.executeUpdate("INSERT INTO image (id, album_id, filename, filepath, uploaded_at) VALUES ('" +
-                            imgId + "','" + esc(groupId) + "','" + esc(fname) + "','" + esc(filepath) + "', NOW())");
+                    stmt.executeUpdate("INSERT INTO image (id, album_id, filename, filepath, uploaded_at, sort_order) VALUES ('" +
+                            imgId + "','" + esc(groupId) + "','" + esc(fname) + "','" + esc(filepath) + "', NOW(), 0)");
                 }
             }
         }

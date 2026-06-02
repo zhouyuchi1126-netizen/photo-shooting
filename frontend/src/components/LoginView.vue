@@ -2,6 +2,8 @@
   <section class="auth-view">
     <div class="auth-card">
       <h1>{{ t('login') }}</h1>
+
+      <!-- 密码登录 -->
       <div class="login-form">
         <label>
           {{ t('username') }}
@@ -44,45 +46,35 @@ import { useI18n } from '../i18n';
 
 const router = useRouter();
 const { t } = useI18n();
+
 const errorMessage = ref('');
 const showPw = ref(false);
 const form = reactive({ username: '', password: '' });
 const pwInput = ref(null);
-
-// 上次登录的用户名（退出登录后保留）
 form.username = localStorage.getItem('lastUsername') || '';
-
 let submitting = false;
 
-function focusPassword() {
-  pwInput.value?.focus();
-}
+function focusPassword() { pwInput.value?.focus(); }
 
 async function submitLogin() {
-  if (!form.username || !form.password) return;
-  if (submitting) return;
+  if (!form.username || !form.password || submitting) return;
   submitting = true;
   errorMessage.value = '';
   try {
-    const response = await login(form);
-    if (response.success) {
+    const res = await login(form);
+    if (res.success) {
       localStorage.setItem('lastUsername', form.username);
-      localStorage.setItem('user', JSON.stringify(response));
+      localStorage.setItem('user', JSON.stringify(res));
       await router.push('/home');
     } else {
-      errorMessage.value = response.message || '登录失败';
+      errorMessage.value = res.message || '登录失败';
       nextTick(() => { pwInput.value?.focus(); submitting = false; });
-      return;
     }
-  } catch (error) {
-    errorMessage.value = '服务器连接失败';
-  }
+  } catch { errorMessage.value = '服务器连接失败'; }
   submitting = false;
 }
 
-onMounted(() => {
-  nextTick(() => pwInput.value?.focus());
-});
+onMounted(() => { nextTick(() => pwInput.value?.focus()); });
 </script>
 
 <style scoped>
@@ -94,7 +86,8 @@ onMounted(() => {
   border: 1px solid #e6e6e6; padding: 2rem; border-radius: 8px;
   box-shadow: 0 0 24px rgba(0,0,0,0.04);
 }
-.auth-card h1 { margin: 0 0 1.5rem; font-size: 2rem; text-align: center; }
+.auth-card h1 { margin: 0 0 1rem; font-size: 2rem; text-align: center; }
+
 label { display: block; margin-bottom: 1rem; font-size: 0.95rem; }
 input {
   width: 100%; padding: 0.85rem 1rem;
@@ -110,22 +103,15 @@ input {
 }
 .pw-toggle:hover { color: #333; }
 .submit-btn {
-  width: 100%; padding: 0.95rem 1rem; margin-top: 1.5rem;
+  width: 100%; padding: 0.95rem 1rem; margin-top: 1rem;
   border: none; border-radius: 6px;
   background: #111; color: white; font-size: 1rem; cursor: pointer;
 }
 .submit-btn:hover { opacity: 0.85; }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.message { margin-top: 0.5rem; color: #d9534f; text-align: center; font-size: 0.9rem; }
 .help-text { margin-top: 1rem; text-align: center; }
-
-.highlight-link {
-  color: #111;
-  font-weight: 600;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.15s;
-}
-.highlight-link:hover {
-  border-bottom-color: #111;
-}
-.message { margin-top: 0; color: #d9534f; text-align: center; font-size: 0.9rem; }
+.highlight-link { color: #111; font-weight: 600; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
+.highlight-link:hover { border-bottom-color: #111; }
 </style>

@@ -33,13 +33,33 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n, locales, setLocale, getLocale } from './i18n';
 
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
+
+// 全局图片保护：禁止右键/拖拽保存
+function onGlobalContextMenu(e) {
+  if (e.target.tagName === 'IMG') {
+    e.preventDefault();
+  }
+}
+function onGlobalDragStart(e) {
+  if (e.target.tagName === 'IMG') {
+    e.preventDefault();
+  }
+}
+onMounted(() => {
+  document.addEventListener('contextmenu', onGlobalContextMenu);
+  document.addEventListener('dragstart', onGlobalDragStart);
+});
+onUnmounted(() => {
+  document.removeEventListener('contextmenu', onGlobalContextMenu);
+  document.removeEventListener('dragstart', onGlobalDragStart);
+});
 
 const user = computed(() => {
   try {
@@ -105,4 +125,12 @@ a.router-link-active { font-weight: 700; }
 .logout-btn:hover { color: #333; }
 
 .app-main { max-width: 1080px; margin: 0 auto; padding: 2rem; }
+
+/* 全局图片保护 */
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+}
 </style>

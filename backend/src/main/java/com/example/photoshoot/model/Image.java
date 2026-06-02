@@ -6,6 +6,7 @@ public class Image {
     private String filename;
     private String filepath;
     private String uploadedAt;
+    private int sortOrder;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -17,4 +18,6 @@ public class Image {
     public void setFilepath(String filepath) { this.filepath = filepath; }
     public String getUploadedAt() { return uploadedAt; }
     public void setUploadedAt(String uploadedAt) { this.uploadedAt = uploadedAt; }
+    public int getSortOrder() { return sortOrder; }
+    public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
 }
