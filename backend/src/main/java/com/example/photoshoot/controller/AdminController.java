@@ -47,11 +47,14 @@ public class AdminController {
         }
         String groupId = payload.get("groupId");
         String title = payload.get("title");
-        String description = payload.get("description");
+        String cameraBrand = payload.get("cameraBrand");
+        String cameraModel = payload.get("cameraModel");
+        Boolean isFilm = payload.containsKey("isFilm") ? "true".equals(payload.get("isFilm")) : null;
+        String filmStock = payload.get("filmStock");
         if (groupId == null || groupId.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("message", "分组 ID 不能为空"));
         }
-        GalleryGroup group = galleryService.createGroup(groupId, title, description);
+        GalleryGroup group = galleryService.createGroup(groupId, title, cameraBrand, cameraModel, isFilm, filmStock);
         return ResponseEntity.ok(group);
     }
 
@@ -82,8 +85,10 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "无权限"));
         }
         try {
+            Boolean isFilm = payload.containsKey("isFilm") ? "true".equals(payload.get("isFilm")) : null;
             GalleryGroup group = galleryService.updateGroup(groupId,
-                    payload.get("title"), payload.get("description"));
+                    payload.get("title"),
+                    payload.get("cameraBrand"), payload.get("cameraModel"), isFilm, payload.get("filmStock"));
             return ResponseEntity.ok(group);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

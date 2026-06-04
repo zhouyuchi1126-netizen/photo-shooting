@@ -140,7 +140,30 @@ public class PhotoShootingApplication {
                             "title VARCHAR(200) NOT NULL, " +
                             "description TEXT, " +
                             "cover_image VARCHAR(200), " +
-                            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+                            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                            "shoot_date DATETIME, " +
+                            "camera_brand VARCHAR(50), " +
+                            "camera_model VARCHAR(200), " +
+                            "is_film TINYINT DEFAULT 0, " +
+                            "film_stock VARCHAR(100))");
+                }
+            } else {
+                try (ResultSet columns = meta.getColumns(null, null, "album", "camera_brand")) {
+                    if (!columns.next()) {
+                        try (Statement stmt = connection.createStatement()) {
+                            stmt.executeUpdate("ALTER TABLE album ADD COLUMN camera_brand VARCHAR(50)");
+                            stmt.executeUpdate("ALTER TABLE album ADD COLUMN camera_model VARCHAR(200)");
+                            stmt.executeUpdate("ALTER TABLE album ADD COLUMN is_film TINYINT DEFAULT 0");
+                        }
+                    }
+                }
+                // shoot_date：必须独立迁移块！
+                try (ResultSet columns = meta.getColumns(null, null, "album", "shoot_date")) {
+                    if (!columns.next()) {
+                        try (Statement stmt = connection.createStatement()) {
+                            stmt.executeUpdate("ALTER TABLE album ADD COLUMN shoot_date DATETIME");
+                        }
+                    }
                 }
             }
         }

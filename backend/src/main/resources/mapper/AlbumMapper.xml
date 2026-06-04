@@ -2,19 +2,27 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.photoshoot.mapper.AlbumMapper">
     <select id="selectAll" resultType="com.example.photoshoot.model.Album">
-        SELECT id, title, description, cover_image AS coverImage, created_at AS createdAt
+        SELECT id, title, cover_image AS coverImage, created_at AS createdAt, shoot_date AS shootDate,
+               camera_brand AS cameraBrand, camera_model AS cameraModel, is_film AS isFilm, film_stock AS filmStock
         FROM album ORDER BY created_at DESC
     </select>
     <select id="selectById" resultType="com.example.photoshoot.model.Album">
-        SELECT id, title, description, cover_image AS coverImage, created_at AS createdAt
+        SELECT id, title, cover_image AS coverImage, created_at AS createdAt, shoot_date AS shootDate,
+               camera_brand AS cameraBrand, camera_model AS cameraModel, is_film AS isFilm, film_stock AS filmStock
         FROM album WHERE id = #{id}
     </select>
     <insert id="insert">
-        INSERT INTO album (id, title, description, cover_image, created_at)
-        VALUES (#{id}, #{title}, #{description}, #{coverImage}, NOW())
+        INSERT INTO album (id, title, cover_image, created_at, shoot_date,
+                           camera_brand, camera_model, is_film, film_stock)
+        VALUES (#{id}, #{title}, #{coverImage}, NOW(), #{shootDate},
+                #{cameraBrand}, #{cameraModel}, #{isFilm, jdbcType=BOOLEAN}, #{filmStock})
     </insert>
     <update id="update">
-        UPDATE album SET title = #{title}, description = #{description}, cover_image = #{coverImage}
+        UPDATE album SET title = #{title}, cover_image = #{coverImage}, shoot_date = #{shootDate},
+                         camera_brand = #{cameraBrand},
+                         camera_model = #{cameraModel},
+                         is_film = #{isFilm, jdbcType=BOOLEAN},
+                         film_stock = #{filmStock}
         WHERE id = #{id}
     </update>
     <delete id="deleteById">

@@ -10,14 +10,24 @@
       </button>
     </div>
 
-    <!-- 创建分类（点击 + 后显示） -->
+    <!-- 创建相册 -->
     <form class="card-section create-form-wrap" v-if="showCreateForm" @submit.prevent="handleCreateGroup">
-      <h2>创建新分类</h2>
+      <h2>创建新相册</h2>
       <div class="form-row">
-        <input v-model="form.title" placeholder="标题 (例如 城市影像)" required />
-        <input v-model="form.description" placeholder="描述" />
-        <button type="submit">创建</button>
+        <input v-model="form.title" placeholder="相册标题" required />
       </div>
+      <div class="form-row">
+        <CustomSelect :items="cameraBrands" v-model="form.cameraBrand" placeholder="— 选择相机品牌 —" :brandColors="brandColorMap" />
+        <input v-model="form.cameraModel" placeholder="相机型号" :disabled="!form.cameraBrand" />
+      </div>
+      <div class="form-row">
+        <CustomSelect :items="filmStocks" v-model="form.filmStock" placeholder="— 选择胶卷型号 —" style="flex:2" :disabled="!form.isFilm" />
+        <label class="film-toggle">
+          <input type="checkbox" v-model="form.isFilm" />
+          <span style="margin-left:2px">胶片拍摄</span>
+        </label>
+      </div>
+      <button type="submit">创建</button>
     </form>
 
     <!-- 分组列表 -->
@@ -41,21 +51,41 @@
                 </svg>
               </button>
             </div>
-            <div class="meta-row">
-              <p
-                class="group-desc"
-                :contenteditable="editingGroup === group.id && editingField === 'description'"
-                @blur="onFieldBlur($event, group.id, 'description')"
-                @keydown.enter.prevent="$event.target.blur()"
-                :class="{ 'is-editing': editingGroup === group.id && editingField === 'description' }"
-              >{{ group.description }}</p>
-              <button class="icon-edit-inline" data-tip="编辑相册描述" @click="startEdit(group, 'description')">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                </svg>
+            <span class="image-count" v-if="editingGroup !== group.id">{{ group.imageCount }} 张图片</span>
+            <!-- 相机/胶片编辑面板（全部同时展示） -->
+            <div class="camera-edit-panel" v-if="editingGroup === group.id && editingField === 'camera'">
+              <div class="form-row">
+                <CustomSelect :items="cameraBrands" v-model="editForm.cameraBrand" placeholder="相机品牌" :brandColors="brandColorMap" />
+                <input v-model="editForm.cameraModel" placeholder="相机型号" />
+              </div>
+              <div class="form-row">
+                <CustomSelect :items="filmStocks" v-model="editForm.filmStock" placeholder="胶卷型号" style="flex:2" :disabled="!editForm.isFilm" />
+                <label class="film-toggle">
+                  <input type="checkbox" v-model="editForm.isFilm" />
+                  <span style="margin-left:2px">胶片</span>
+                </label>
+              </div>
+            </div>
+            <!-- 展示 -->
+            <div class="meta-row" v-if="editingGroup !== group.id">
+              <div class="exif-display" v-if="group.cameraBrand">
+                <span class="exif-part" @click="startEdit(group, 'camera')">
+                  <!-- <img v-if="getBrandLogo(group.cameraBrand)" :src="getBrandLogo(group.cameraBrand)" class="exif-logo" /> -->
+                  <strong>{{ brandEnLabel(group.cameraBrand) }}</strong>
+                </span>
+                <span v-if="group.cameraModel" class="exif-part" @click="startEdit(group, 'camera')">{{ group.cameraModel }}</span>
+                <span v-if="group.film" class="exif-divider">|</span>
+                <span v-if="group.film" class="exif-part exif-film" @click="startEdit(group, 'camera')">{{ filmLabel(group.filmStock) }}</span>
+                <button class="icon-inline-edit" @click.stop="startEdit(group, 'camera')" data-tip="编辑相机信息">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#bbb" stroke-width="1.8">
+                    <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                  </svg>
+                </button>
+              </div>
+              <button v-else class="add-exif-btn" @click.stop="startEdit(group, 'camera')" data-tip="添加相机信息">
+                + 相机信息
               </button>
             </div>
-            <span class="image-count" v-if="editingGroup !== group.id">{{ group.imageCount }} 张图片</span>
           </div>
           <div class="group-actions">
             <button class="icon-btn" data-tip="上传图片" @click="toggleExpand(group)">
@@ -75,14 +105,23 @@
           </div>
         </div>
 
-        <!-- 预览图（前4张，正方形，编辑/展开时隐藏） -->
-        <div class="preview-strip" v-if="group.previewImages && group.previewImages.length && editingGroup !== group.id && expandedGroupId !== group.id">
-          <div
-            class="preview-thumb"
-            v-for="(img, pi) in group.previewImages.slice(0, 4)"
-            :key="pi"
-          >
-            <img :src="img" :alt="'预览 ' + (pi + 1)" />
+        <!-- 预览图（前4张 / 空相册占位图） -->
+        <div class="preview-strip" v-if="editingGroup !== group.id && expandedGroupId !== group.id">
+          <template v-if="group.previewImages && group.previewImages.length">
+            <div
+              class="preview-thumb"
+              v-for="(img, pi) in group.previewImages.slice(0, 4)"
+              :key="pi"
+            >
+              <img :src="img" :alt="'预览 ' + (pi + 1)" />
+            </div>
+          </template>
+          <div class="preview-thumb placeholder" v-else>
+            <svg viewBox="0 0 4 3" width="100%" height="100%" preserveAspectRatio="none">
+              <rect width="4" height="3" fill="#f0f0f0"/>
+              <circle cx="2" cy="1.2" r="0.4" fill="#ddd"/>
+              <path d="M0.5 2.8 L1.5 1.5 L2.5 2.2 L3.5 1 L4 2.8 Z" fill="#ddd"/>
+            </svg>
           </div>
         </div>
 
@@ -177,6 +216,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
+import CustomSelect from './CustomSelect.vue';
 import {
   createGroup as createGroupApi,
   getGroups,
@@ -199,8 +239,71 @@ function showToast(msg, duration = 5000) {
 }
 const editingGroup = ref(null);
 const editingField = ref(null);
-const form = reactive({ title: '', description: '' });
-const editForm = reactive({ title: '', description: '' });
+const brandColorMap = { c: '333', n: '333', f: 'b64710', p: 'c9302b', h: '004d73', r: 'e60012', o: '005aff' };
+const cameraBrands = [
+  { id: 'canon', label: 'CANON 佳能', logo: '/logo/canon.svg' },
+  { id: 'nikon', label: 'NIKON 尼康', logo: '/logo/nikon.svg' },
+  { id: 'fujifilm', label: 'FUJIFILM 富士', logo: '/logo/fujifilm.svg' },
+  { id: 'pentax', label: 'PENTAX 宾得', logo: '/logo/pentax.svg' },
+  { id: 'panasonic', label: 'PANASONIC 松下', logo: '/logo/panasonic.svg' },
+  { id: 'hasselblad', label: 'HASSELBLAD 哈苏', logo: '/logo/hasselblad.svg' },
+  { id: 'ricoh', label: 'RICOH 理光', logo: '/logo/ricoh.svg' },
+  { id: 'contax', label: 'CONTAX 康泰时', logo: '/logo/contax.svg' },
+  { id: 'phaseone', label: 'PHASE ONE 飞思', logo: '/logo/phaseone.svg' },
+];
+
+const filmStocks = [
+  { id: 'kodak-portra160', label: 'KODAK PORTRA 160' },
+  { id: 'kodak-portra400', label: 'KODAK PORTRA 400' },
+  { id: 'kodak-portra800', label: 'KODAK PORTRA 800' },
+  { id: 'kodak-ektar100', label: 'KODAK EKTAR 100' },
+  { id: 'kodak-gold200', label: 'KODAK GOLD 200' },
+  { id: 'kodak-triX400', label: 'KODAK TRI-X 400' },
+  { id: 'kodak-tmax400', label: 'KODAK T-MAX 400' },
+  { id: 'kodak-colorplus200', label: 'KODAK COLORPLUS 200' },
+  { id: 'kodak-ultramax400', label: 'KODAK ULTRAMAX 400' },
+  { id: 'kodak-ektachrome100', label: 'KODAK EKTACHROME E100' },
+  { id: 'fuji-provia100f', label: 'FUJIFILM PROVIA 100F' },
+  { id: 'fuji-velvia50', label: 'FUJIFILM VELVIA 50' },
+  { id: 'fuji-velvia100', label: 'FUJIFILM VELVIA 100' },
+  { id: 'fuji-superia400', label: 'FUJIFILM SUPERIA X-TRA 400' },
+  { id: 'fuji-acros100', label: 'FUJIFILM NEOPAN 100 ACROS' },
+  { id: 'fuji-neopan400', label: 'FUJIFILM NEOPAN 400' },
+  { id: 'ilford-hp5', label: 'ILFORD HP5 PLUS 400' },
+  { id: 'ilford-fp4', label: 'ILFORD FP4 PLUS 125' },
+  { id: 'ilford-delta100', label: 'ILFORD DELTA 100' },
+  { id: 'ilford-delta400', label: 'ILFORD DELTA 400' },
+  { id: 'ilford-delta3200', label: 'ILFORD DELTA 3200' },
+  { id: 'ilford-panf', label: 'ILFORD PAN F PLUS 50' },
+  { id: 'lomo100', label: 'LOMOGRAPHY 100' },
+  { id: 'lomo400', label: 'LOMOGRAPHY 400' },
+  { id: 'lomo800', label: 'LOMOGRAPHY 800' },
+  { id: 'lomo-metropolis', label: 'LOMOGRAPHY METROPOLIS' },
+  { id: 'lomo-purple', label: 'LOMOGRAPHY PURPLE' },
+  { id: 'cinestill-50d', label: 'CINESTILL 50D' },
+  { id: 'cinestill-800t', label: 'CINESTILL 800T' },
+  { id: 'cinestill-bwxx', label: 'CINESTILL BWXX' },
+  { id: 'rollei-infrared', label: 'ROLLEI INFRARED 400' },
+  { id: 'rollei-retro400s', label: 'ROLLEI RETRO 400S' },
+];
+
+const form = reactive({ title: '', cameraBrand: '', cameraModel: '', isFilm: false, filmStock: '' });
+const editForm = reactive({ title: '', cameraBrand: '', cameraModel: '', filmStock: '', isFilm: false });
+
+function getBrandLogo(id) {
+  const b = cameraBrands.find(c => c.id === id);
+  return b ? b.logo : '';
+}
+
+function l(s) { return (s || '').toUpperCase(); }
+function filmLabel(id) { const f = filmStocks.find(x => x.id === id); return f ? f.label : l(id); }
+function brandLabel(id) { const b = cameraBrands.find(x => x.id === id); return b ? b.label : l(id); }
+function brandEnLabel(id) { const l = brandLabel(id); return l ? l.split(/[\s一-鿿]+/)[0] || l : l; }
+
+function onSelectBlur(e, groupId, field) {
+  editForm[field] = e.target.value;
+  if (editingGroup.value === groupId) scheduleSave();
+}
 const showCreateForm = ref(false);
 
 /* ---- 展开的图片管理 ---- */
@@ -349,14 +452,19 @@ function scheduleSave() {
 
 function onFieldBlur(e, groupId, field) {
   if (field === 'title') editForm.title = e.target.innerText.trim();
-  else editForm.description = e.target.innerText.trim();
+  else if (field === 'cameraModel') editForm.cameraModel = e.target.value.trim();
   if (editingGroup.value === groupId) scheduleSave();
+}
+
+async function finishEdit(groupId) {
+  if (saveTimer) clearTimeout(saveTimer);
+  await handleUpdateGroup(groupId);
 }
 
 /* ---- 点击外侧关闭创建表单 + 自动保存 ---- */
 function onDocumentClick(e) {
   // 点击 icon 按钮时不触发保存（避免编辑刚打开就保存）
-  if (e.target.closest('.icon-edit-inline, .add-icon-btn, .img-checkbox, .cover-overlay, .img-item')) return;
+  if (e.target.closest('.icon-edit-inline, .add-icon-btn, .img-checkbox, .cover-overlay, .img-item, .camera-edit-panel, .custom-select, .cs-dropdown, .cs-trigger')) return;
 
   if (showCreateForm.value) {
     const wrap = document.querySelector('.create-form-wrap');
@@ -389,20 +497,26 @@ function generateGroupId(title) {
 }
 
 async function handleCreateGroup() {
-  if (!form.title) { showToast('请输入分类标题'); return; }
+  if (!form.title) { showToast('请输入相册标题'); return; }
   try {
     await createGroupApi({
       groupId: generateGroupId(form.title),
       title: form.title.trim(),
-      description: form.description.trim()
+      cameraBrand: form.cameraBrand,
+      cameraModel: form.cameraModel,
+      isFilm: form.isFilm ? 'true' : 'false',
+      filmStock: form.filmStock
     });
-    showToast('分类创建成功');
+    showToast('相册创建成功');
     form.title = '';
-    form.description = '';
+    form.cameraBrand = '';
+    form.cameraModel = '';
+    form.isFilm = false;
+    form.filmStock = '';
     showCreateForm.value = false;
     await loadGroups();
   } catch (error) {
-    showToast('创建分类失败');
+    showToast('创建相册失败');
     console.error(error);
   }
 }
@@ -412,7 +526,10 @@ function startEdit(group, field) {
   editingGroup.value = group.id;
   editingField.value = field;
   editForm.title = group.title || '';
-  editForm.description = group.description || '';
+  editForm.cameraBrand = group.cameraBrand || '';
+  editForm.cameraModel = group.cameraModel || '';
+  editForm.filmStock = group.filmStock || '';
+  editForm.isFilm = group.film || false;
   nextTick(() => {
     const sel = `.group-item [contenteditable="true"]`;
     const el = document.querySelector(sel);
@@ -432,7 +549,13 @@ function startEdit(group, field) {
 
 async function handleUpdateGroup(groupId) {
   try {
-    await updateGroupApi(groupId, { title: editForm.title, description: editForm.description });
+    await updateGroupApi(groupId, {
+      title: editForm.title,
+      cameraBrand: editForm.cameraBrand || null,
+      cameraModel: editForm.cameraModel || null,
+      isFilm: editForm.isFilm ? 'true' : 'false',
+      filmStock: editForm.filmStock || null
+    });
     editingGroup.value = null;
     editingField.value = null;
     await loadGroups();
@@ -576,9 +699,21 @@ onUnmounted(() => {
 .card-section h2 { margin: 0; font-size: 1.15rem; }
 
 .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-.form-row input {
+.form-row input, .form-row select {
   flex: 1; min-width: 140px; padding: 0.7rem 0.9rem;
-  border: 1px solid #d9d9d9; font-size: 0.95rem;
+  border: 1px solid #d9d9d9; font-size: 0.95rem; background: #fff;
+}
+.film-toggle {
+  display: flex; align-items: center; gap: 0.25rem;
+  font-size: 0.9rem; cursor: pointer; padding: 0; white-space: nowrap;
+}
+.film-toggle input { width: auto; margin: 0; }
+
+.brand-logo { width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; }
+.exif-logo {
+  height: 1.3em; width: auto; vertical-align: middle;
+  margin-right: 10px;
+  /* 1.3em 补偿 simple-icons ~25% 内边距，使图案与文字等高 */
 }
 
 button {
@@ -643,12 +778,34 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .meta-row h3.is-editing { color: #000; outline: none; caret-color: #333; }
 
-.meta-row .group-desc {
-  margin: 0; color: #888;
-  font-size: 0.9rem; padding: 2px 0;
-}
-.meta-row .group-desc.is-editing { color: #000; outline: none; caret-color: #333; }
 .image-count { font-size: 0.8rem; color: #aaa; margin-top: 0.1rem; }
+.meta-exif { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.25rem; }
+.exif-display {
+  font-size: 0.8rem; color: #555; display: flex; align-items: center; gap: 2px;
+  flex-wrap: wrap;
+}
+.exif-part { cursor: pointer; display: inline-flex; align-items: center; gap: 2px; }
+.exif-part:hover strong, .exif-part:hover { color: #333; }
+.exif-divider { color: #ccc; margin: 0 3px; }
+.exif-film { color: #8a7e5c; }
+.icon-inline-edit {
+  width: 24px; height: 24px; padding: 0; margin-left: 2px;
+  display: grid; place-items: center;
+  background: transparent; border: none; cursor: pointer; opacity: 0.4;
+  transition: opacity 0.15s;
+}
+.icon-inline-edit:hover { opacity: 1; }
+
+/* 相机编辑面板 */
+.camera-edit-panel {
+  display: grid; gap: 0.5rem; padding: 0.5rem 0; width: 100%;
+}
+.add-exif-btn {
+  padding: 2px 10px; font-size: 0.8rem; color: #999;
+  background: transparent; border: 1px dashed #d9d9d9; border-radius: 3px;
+  cursor: pointer; transition: all 0.15s;
+}
+.add-exif-btn:hover { color: #333; border-color: #aaa; }
 
 /* --- 图标按钮 --- */
 .group-actions {

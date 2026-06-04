@@ -43,6 +43,12 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.44.0.0</version>
         </dependency>
+        <!-- EXIF 元数据读取 -->
+        <dependency>
+            <groupId>com.drewnoakes</groupId>
+            <artifactId>metadata-extractor</artifactId>
+            <version>2.19.0</version>
+        </dependency>
         <!-- 阿里云 OSS SDK（生产环境图片存储） -->
         <dependency>
             <groupId>com.aliyun.oss</groupId>

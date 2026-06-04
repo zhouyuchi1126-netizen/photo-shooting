@@ -95,6 +95,7 @@ const currentGroup = computed(() => {
   return groups.value.find((item) => item.id === currentGroupId.value) || { title: '', description: '', images: [] };
 });
 
+
 const overlayOpen = computed(() => selectedIndex.value !== null);
 const currentImage = computed(() => (selectedIndex.value !== null ? currentGroup.value.images[selectedIndex.value] : ''));
 const currentIndex = computed(() => selectedIndex.value ?? 0);
@@ -338,9 +339,8 @@ watch(
 }
 
 .image-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(4, 1fr);
+  column-count: 4;
+  column-gap: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
   transition: filter 0.3s ease;
@@ -355,6 +355,9 @@ watch(
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+  line-height: 0;
 }
 
 .image-card img {

@@ -4,6 +4,22 @@
       <router-link to="/home" class="logo">MR WORRY'S PORTFOLIO</router-link>
       <nav class="app-nav">
         <template v-if="user">
+          <span class="sort-icon-wrap" v-if="route.name === 'Home'">
+            <button class="sort-btn" @click="sortOpen = !sortOpen" title="排序">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <line x1="3" y1="5" x2="11" y2="5"/>
+                <line x1="3" y1="12" x2="11" y2="12"/>
+                <line x1="3" y1="19" x2="11" y2="19"/>
+                <polyline points="14,10 18,15 22,10" stroke-width="1.6"/>
+              </svg>
+            </button>
+            <div class="sort-dropdown" v-if="sortOpen" @click.stop>
+              <div class="sort-item" :class="{ active: currentSort === 'time-desc' }" @click="setSort('time-desc')">拍摄时间正序</div>
+              <div class="sort-item" :class="{ active: currentSort === 'time-asc' }" @click="setSort('time-asc')">拍摄时间倒序</div>
+              <div class="sort-item" :class="{ active: currentSort === 'name-asc' }" @click="setSort('name-asc')">名称正序</div>
+              <div class="sort-item" :class="{ active: currentSort === 'name-desc' }" @click="setSort('name-desc')">名称倒序</div>
+            </div>
+          </span>
           <span class="app-user">{{ user.displayName || user.username }}</span>
           <router-link v-if="user.role === 'admin'" to="/admin">相册管理</router-link>
           <span class="divider">|</span>
@@ -33,13 +49,29 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n, locales, setLocale, getLocale } from './i18n';
 
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
+
+/* ---- 排序 ---- */
+const sortOpen = ref(false);
+const currentSort = ref(localStorage.getItem('sortPreference') || 'time-desc');
+function setSort(val) {
+  currentSort.value = val;
+  localStorage.setItem('sortPreference', val);
+  sortOpen.value = false;
+  window.dispatchEvent(new CustomEvent('sort-changed', { detail: val }));
+}
+function onDocClickSort(e) {
+  if (sortOpen.value) {
+    const el = document.querySelector('.sort-icon-wrap');
+    if (el && !el.contains(e.target)) sortOpen.value = false;
+  }
+}
 
 // 全局图片保护：禁止右键/拖拽保存
 function onGlobalContextMenu(e) {
@@ -55,10 +87,12 @@ function onGlobalDragStart(e) {
 onMounted(() => {
   document.addEventListener('contextmenu', onGlobalContextMenu);
   document.addEventListener('dragstart', onGlobalDragStart);
+  document.addEventListener('click', onDocClickSort);
 });
 onUnmounted(() => {
   document.removeEventListener('contextmenu', onGlobalContextMenu);
   document.removeEventListener('dragstart', onGlobalDragStart);
+  document.removeEventListener('click', onDocClickSort);
 });
 
 const user = computed(() => {
@@ -125,6 +159,25 @@ a.router-link-active { font-weight: 700; }
 .logout-btn:hover { color: #333; }
 
 .app-main { max-width: 1080px; margin: 0 auto; padding: 2rem; }
+
+/* 排序控件 */
+.sort-icon-wrap { position: relative; display: inline-flex; }
+.sort-btn {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; padding: 0;
+  background: transparent; border: none; color: #888; cursor: pointer;
+}
+.sort-btn:hover { color: #333; }
+.sort-dropdown {
+  position: absolute; top: 100%; left: 0; z-index: 100;
+  background: #fff; border: 1px solid #ececec; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  min-width: 120px; margin-top: 4px;
+}
+.sort-item {
+  padding: 0.5rem 0.8rem; font-size: 0.85rem; color: #444; cursor: pointer;
+}
+.sort-item:hover { background: #f5f5f5; }
+.sort-item.active { font-weight: 600; color: #111; }
 
 /* 全局图片保护 */
 img {

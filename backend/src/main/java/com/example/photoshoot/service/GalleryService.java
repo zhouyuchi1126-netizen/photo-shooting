@@ -6,6 +6,7 @@ import com.example.photoshoot.model.Album;
 import com.example.photoshoot.model.GalleryGroup;
 import com.example.photoshoot.model.Image;
 import com.example.photoshoot.storage.StorageService;
+import com.example.photoshoot.util.ExifUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -52,20 +53,27 @@ public class GalleryService {
 
     /* ========== 相册 CRUD ========== */
 
-    public GalleryGroup createGroup(String groupId, String title, String description) {
+    public GalleryGroup createGroup(String groupId, String title,
+                                     String cameraBrand, String cameraModel, Boolean isFilm, String filmStock) {
         Album album = new Album();
         album.setId(groupId);
         album.setTitle(title != null && !title.isBlank() ? title : formatTitle(groupId));
-        album.setDescription(description != null && !description.isBlank() ? description : "由管理员维护的作品集");
+        album.setCameraBrand(cameraBrand);
+        album.setCameraModel(cameraModel);
+        album.setFilm(isFilm != null && isFilm);
+        album.setFilmStock(album.isFilm() ? filmStock : null);
         albumMapper.insert(album);
         return toGroup(album);
     }
 
-    public GalleryGroup updateGroup(String groupId, String title, String description) {
+    public GalleryGroup updateGroup(String groupId, String title,
+                                     String cameraBrand, String cameraModel, Boolean isFilm, String filmStock) {
         Album album = albumMapper.selectById(groupId);
         if (album == null) throw new IllegalArgumentException("指定相册不存在");
         if (title != null && !title.isBlank()) album.setTitle(title);
-        if (description != null && !description.isBlank()) album.setDescription(description);
+        if (cameraBrand != null) album.setCameraBrand(cameraBrand);
+        if (cameraModel != null) album.setCameraModel(cameraModel);
+        if (isFilm != null) { album.setFilm(isFilm); album.setFilmStock(isFilm ? filmStock : null); }
         albumMapper.update(album);
         return toGroup(album);
     }
@@ -102,6 +110,17 @@ public class GalleryService {
         // 通过 StorageService 保存
         String filepath = storage.save(groupId, file);
         String filename = filepath.substring(filepath.lastIndexOf('/') + 1);
+
+        // 提取 EXIF 拍摄时间（仅第一张图片）
+        if (album.getShootDate() == null || album.getShootDate().isBlank()) {
+            try (InputStream is = file.getInputStream()) {
+                java.time.LocalDateTime dt = ExifUtil.extractShootDate(is);
+                if (dt != null) {
+                    album.setShootDate(dt.toString());
+                    albumMapper.update(album);
+                }
+            } catch (IOException ignored) {}
+        }
 
         Image image = new Image();
         image.setId(UUID.randomUUID().toString());
@@ -147,7 +166,11 @@ public class GalleryService {
         GalleryGroup group = new GalleryGroup();
         group.setId(album.getId());
         group.setTitle(album.getTitle());
-        group.setDescription(album.getDescription());
+        group.setShootDate(album.getShootDate());
+        group.setCameraBrand(album.getCameraBrand());
+        group.setCameraModel(album.getCameraModel());
+        group.setFilm(album.isFilm());
+        group.setFilmStock(album.getFilmStock());
 
         List<Image> images = imageMapper.selectByAlbumId(album.getId());
         group.setImageCount(images != null ? images.size() : 0);
