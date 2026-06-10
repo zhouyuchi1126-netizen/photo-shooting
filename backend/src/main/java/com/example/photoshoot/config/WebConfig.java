@@ -17,6 +17,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.anti-leech.domains:http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:8081}")
     private String allowedDomainsStr;
 
+    @Value("${app.storage.local.path:images}")
+    private String storagePath;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
@@ -27,8 +30,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String dir = storagePath.endsWith("/") ? storagePath : storagePath + "/";
         registry.addResourceHandler("/images/**")
-            .addResourceLocations("file:images/");
+            .addResourceLocations("file:" + dir);
     }
 
     /** 图片防盗链：仅允许指定域名引用 */

@@ -1,6 +1,7 @@
 package com.example.photoshoot.storage;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,13 +18,21 @@ import java.util.Comparator;
 @ConditionalOnProperty(name = "app.storage.type", havingValue = "local", matchIfMissing = true)
 public class LocalStorageService implements StorageService {
 
-    private final Path root = Paths.get("images");
+    private final Path root;
+
+    public LocalStorageService(@Value("${app.storage.local.path:images}") String path) {
+        this.root = Paths.get(path);
+    }
 
     @PostConstruct
     public void init() {
         try { Files.createDirectories(root); } catch (IOException e) {
-            throw new RuntimeException("无法创建图片目录", e);
+            throw new RuntimeException("无法创建图片目录: " + root, e);
         }
+    }
+
+    private Path groupDir(String groupId) {
+        return root.resolve(groupId);
     }
 
     @Override
@@ -31,7 +40,7 @@ public class LocalStorageService implements StorageService {
         String filename = file.getOriginalFilename();
         if (filename == null || filename.isBlank()) filename = java.util.UUID.randomUUID() + ".jpg";
 
-        Path folder = root.resolve(groupId);
+        Path folder = groupDir(groupId);
         try {
             Files.createDirectories(folder);
             try (InputStream input = file.getInputStream()) {
@@ -46,13 +55,13 @@ public class LocalStorageService implements StorageService {
     @Override
     public void delete(String groupId, String filename) {
         try {
-            Files.deleteIfExists(root.resolve(groupId).resolve(filename));
+            Files.deleteIfExists(groupDir(groupId).resolve(filename));
         } catch (IOException ignored) {}
     }
 
     @Override
     public void deleteGroup(String groupId) {
-        Path folder = root.resolve(groupId);
+        Path folder = groupDir(groupId);
         if (Files.exists(folder)) {
             try {
                 Files.walk(folder)
