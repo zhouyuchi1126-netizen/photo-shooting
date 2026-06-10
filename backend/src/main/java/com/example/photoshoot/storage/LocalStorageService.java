@@ -20,7 +20,7 @@ public class LocalStorageService implements StorageService {
 
     private final Path root;
 
-    public LocalStorageService(@Value("${app.storage.local.path:images}") String path) {
+    public LocalStorageService(@Value("${app.storage.local.path}") String path) {
         this.root = Paths.get(path);
     }
 
