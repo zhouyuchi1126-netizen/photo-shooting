@@ -28,7 +28,7 @@
         </el-select>
         <el-checkbox v-model="form.isFilm" label="胶片拍摄" />
       </div>
-      <el-button type="primary" native-type="submit">创建</el-button>
+      <button type="submit" class="create-btn">创建</button>
     </form>
 
     <!-- 分组列表 -->
@@ -620,6 +620,12 @@ onUnmounted(() => {
 .card-section h2 { margin: 0; font-size: 1.15rem; }
 
 .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+.create-btn {
+  padding: 0.7rem 1.2rem; border: none; width: auto; align-self: flex-start;
+  background: #111; color: #fff; cursor: pointer; font-size: 0.9rem;
+}
+.create-btn:hover { opacity: 0.85; }
 
 /* --- 分组列表 --- */
 .group-table-wrap { display: grid; gap: 0.75rem; }
