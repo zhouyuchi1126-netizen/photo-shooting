@@ -289,4 +289,9 @@ img {
 
 /* 未登录时语言切换使用 router-link */
 .app-nav .lang-link.router-link-active { font-weight: 600; color: #111; }
+
+/* 防止 iOS 输入时自动放大 */
+@media (max-width: 767px) {
+  input, textarea, select, .el-input__inner { font-size: 16px !important; }
+}
 </style>

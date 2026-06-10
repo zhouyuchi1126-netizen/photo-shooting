@@ -58,6 +58,10 @@ async function submitLogin() {
   try {
     const res = await login(form);
     if (res.success) {
+      // 登录成功后重置页面缩放（解决 iOS 输入放大后不回缩的问题）
+      const vp = document.querySelector('meta[name="viewport"]');
+      if (vp) vp.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0';
+      setTimeout(() => { if (vp) vp.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0'; }, 100);
       localStorage.setItem('lastUsername', form.username);
       localStorage.setItem('user', JSON.stringify(res));
       await router.push('/home');
