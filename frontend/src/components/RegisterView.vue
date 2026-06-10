@@ -20,9 +20,10 @@
         </el-form-item>
         <p class="password-hint">{{ t('passwordHint') }}</p>
         <el-form-item>
-          <el-button type="primary" class="submit-btn" native-type="submit" :loading="submitting" round>
+          <button type="submit" class="submit-btn" :disabled="submitting">
+            <span v-if="submitting" class="btn-loading">···</span>
             {{ t('register') }}
-          </el-button>
+          </button>
         </el-form-item>
       </el-form>
 
@@ -86,7 +87,13 @@ async function submitRegister() {
   box-shadow: 0 0 24px rgba(0,0,0,0.04);
 }
 .auth-card h1 { margin: 0 0 1.5rem; font-size: 2rem; text-align: center; }
-.submit-btn { width: 100%; }
+.submit-btn {
+  width: 100%; padding: 0.95rem 1rem; border: none; border-radius: 6px;
+  background: #111; color: white; font-size: 1rem; cursor: pointer;
+}
+.submit-btn:hover { opacity: 0.85; }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-loading { margin-right: 4px; }
 .password-hint { margin: -0.5rem 0 0.5rem; color: #666; font-size: 0.9rem; }
 .help-text { margin-top: 1rem; text-align: center; }
 .highlight-link { color: #111; font-weight: 600; border-bottom: 1px solid transparent; transition: border-color 0.15s; }

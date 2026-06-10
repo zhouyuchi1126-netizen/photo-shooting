@@ -2,19 +2,7 @@
   <div class="app-shell">
     <header class="app-header">
       <router-link to="/home" class="logo">MR WORRY'S PORTFOLIO</router-link>
-      <!-- 移动端汉堡菜单按钮 -->
-      <button class="hamburger-btn" @click="mobileMenuOpen = !mobileMenuOpen" v-if="user">
-        <svg v-if="!mobileMenuOpen" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-        <svg v-else viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <line x1="6" y1="6" x2="18" y2="18"/>
-          <line x1="18" y1="6" x2="6" y2="18"/>
-        </svg>
-      </button>
-      <nav class="app-nav" :class="{ 'mobile-open': mobileMenuOpen }">
+      <nav class="app-nav">
         <template v-if="user">
           <span class="sort-icon-wrap" v-if="route.name === 'Home'">
             <button class="sort-btn" @click="sortOpen = !sortOpen" title="排序">
@@ -32,8 +20,8 @@
               <div class="sort-item" :class="{ active: currentSort === 'name-desc' }" @click="setSort('name-desc')">名称倒序</div>
             </div>
           </span>
-          <span class="app-user">{{ user.displayName || user.username }}</span>
-          <router-link v-if="user.role === 'admin'" to="/admin" @click="mobileMenuOpen = false">相册管理</router-link>
+          <span class="app-user" :class="{ 'mobile-hide': user?.role === 'admin' }">{{ user.displayName || user.username }}</span>
+          <router-link v-if="user.role === 'admin'" to="/admin">相册管理</router-link>
           <span class="divider">|</span>
           <button class="logout-btn" @click="logout" title="退出登录">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -44,13 +32,24 @@
           </button>
         </template>
         <template v-else>
-          <span
-            v-for="loc in locales"
-            :key="loc.code"
-            class="lang-link"
-            :class="{ active: getLocale().value === loc.code }"
-            @click="setLocale(loc.code)"
-          >{{ loc.label }}</span>
+          <span class="lang-globe-wrap">
+            <button class="lang-globe-btn" @click="langOpen = !langOpen" title="语言 / Language">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <ellipse cx="12" cy="12" rx="4" ry="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+              </svg>
+            </button>
+            <div class="lang-dropdown" v-if="langOpen" @click.stop>
+              <div
+                v-for="loc in locales"
+                :key="loc.code"
+                class="lang-dropdown-item"
+                :class="{ active: getLocale().value === loc.code }"
+                @click="setLocale(loc.code); langOpen = false"
+              >{{ loc.label }}</div>
+            </div>
+          </span>
         </template>
       </nav>
     </header>
@@ -69,8 +68,8 @@ const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
 
-/* ---- 移动端菜单 ---- */
-const mobileMenuOpen = ref(false);
+/* ---- 语言切换下拉 ---- */
+const langOpen = ref(false);
 
 /* ---- 排序 ---- */
 const sortOpen = ref(false);
@@ -81,10 +80,16 @@ function setSort(val) {
   sortOpen.value = false;
   window.dispatchEvent(new CustomEvent('sort-changed', { detail: val }));
 }
-function onDocClickSort(e) {
+function onDocClick(e) {
+  // 关闭排序下拉
   if (sortOpen.value) {
     const el = document.querySelector('.sort-icon-wrap');
     if (el && !el.contains(e.target)) sortOpen.value = false;
+  }
+  // 关闭语言切换下拉
+  if (langOpen.value) {
+    const el = document.querySelector('.lang-globe-wrap');
+    if (el && !el.contains(e.target)) langOpen.value = false;
   }
 }
 
@@ -102,12 +107,12 @@ function onGlobalDragStart(e) {
 onMounted(() => {
   document.addEventListener('contextmenu', onGlobalContextMenu);
   document.addEventListener('dragstart', onGlobalDragStart);
-  document.addEventListener('click', onDocClickSort);
+  document.addEventListener('click', onDocClick);
 });
 onUnmounted(() => {
   document.removeEventListener('contextmenu', onGlobalContextMenu);
   document.removeEventListener('dragstart', onGlobalDragStart);
-  document.removeEventListener('click', onDocClickSort);
+  document.removeEventListener('click', onDocClick);
 });
 
 const user = computed(() => {
@@ -165,6 +170,25 @@ a.router-link-active { font-weight: 700; }
 .lang-link:hover { color: #333; }
 .lang-link.active { color: #111; font-weight: 600; }
 
+/* 语言切换地球图标 + 下拉 */
+.lang-globe-wrap { position: relative; display: inline-flex; }
+.lang-globe-btn {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; padding: 0;
+  background: transparent; border: none; color: #888; cursor: pointer;
+}
+.lang-globe-btn:hover { color: #333; }
+.lang-dropdown {
+  position: absolute; top: 100%; right: 0; z-index: 100;
+  background: #fff; border: 1px solid #ececec; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  min-width: 110px; margin-top: 4px;
+}
+.lang-dropdown-item {
+  padding: 0.5rem 0.8rem; font-size: 0.85rem; color: #444; cursor: pointer;
+}
+.lang-dropdown-item:hover { background: #f5f5f5; }
+.lang-dropdown-item.active { font-weight: 600; color: #111; }
+
 .logout-btn {
   display: grid; place-items: center;
   width: 32px; height: 32px; padding: 0;
@@ -202,69 +226,14 @@ img {
   pointer-events: auto;
 }
 
-/* ========== 移动端响应式 ========== */
-
-/* 汉堡菜单按钮（默认隐藏） */
-.hamburger-btn {
-  display: none;
-  place-items: center;
-  width: 36px; height: 36px; padding: 0;
-  background: transparent; border: none; color: #888;
-  cursor: pointer; z-index: 25;
-}
-.hamburger-btn:hover { color: #333; }
-
 @media (max-width: 767px) {
-  .app-header { padding: 0.75rem 1rem; }
-
-  .hamburger-btn { display: grid; }
-
-  .app-nav {
-    position: fixed;
-    top: 0; right: 0; bottom: 0;
-    width: 220px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
-    background: rgba(255,255,255,0.98);
-    backdrop-filter: blur(12px);
-    border-left: 1px solid #ececec;
-    padding: 4.5rem 1.5rem 2rem;
-    transform: translateX(100%);
-    transition: transform 0.25s ease;
-    z-index: 22;
-    flex-wrap: nowrap;
-  }
-  .app-nav.mobile-open {
-    transform: translateX(0);
-  }
-
-  .app-nav .app-user {
-    display: block; width: 100%;
-    font-size: 1rem; padding: 0.75rem 0;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  .app-nav a, .app-nav .logout-btn {
-    display: flex; width: 100%;
-    padding: 0.75rem 0; font-size: 0.95rem;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  .app-nav .divider { display: none; }
-
-  .app-nav .sort-icon-wrap {
-    width: 100%; padding: 0.75rem 0;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  /* 未登录状态语言切换 */
-  .app-nav .lang-link {
-    display: block; width: 100%;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
+  .app-header { padding: 0.75rem 1rem; gap: 0.5rem; }
+  .app-nav { gap: 0.5rem; }
+  .sort-icon-wrap { display: none; }
+  .divider { display: none; }
+  .app-user.mobile-hide { display: none; }
+  .lang-globe-wrap { position: relative; }
+  .lang-dropdown { right: 0; left: auto; }
   .app-main { padding: 1rem; }
 }
 

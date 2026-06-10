@@ -84,6 +84,9 @@ export const locales = [
 ];
 
 export function useI18n() {
-  const t = (key) => computed(() => messages[locale.value]?.[key] || messages['zh-CN'][key] || key);
+  const t = (key) => {
+    const l = locale.value;
+    return messages[l]?.[key] || messages['zh-CN'][key] || key;
+  };
   return { t, getLocale, setLocale, locales };
 }
