@@ -2,7 +2,19 @@
   <div class="app-shell">
     <header class="app-header">
       <router-link to="/home" class="logo">MR WORRY'S PORTFOLIO</router-link>
-      <nav class="app-nav">
+      <!-- 移动端汉堡菜单按钮 -->
+      <button class="hamburger-btn" @click="mobileMenuOpen = !mobileMenuOpen" v-if="user">
+        <svg v-if="!mobileMenuOpen" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+        <svg v-else viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="18" y1="6" x2="6" y2="18"/>
+        </svg>
+      </button>
+      <nav class="app-nav" :class="{ 'mobile-open': mobileMenuOpen }">
         <template v-if="user">
           <span class="sort-icon-wrap" v-if="route.name === 'Home'">
             <button class="sort-btn" @click="sortOpen = !sortOpen" title="排序">
@@ -21,7 +33,7 @@
             </div>
           </span>
           <span class="app-user">{{ user.displayName || user.username }}</span>
-          <router-link v-if="user.role === 'admin'" to="/admin">相册管理</router-link>
+          <router-link v-if="user.role === 'admin'" to="/admin" @click="mobileMenuOpen = false">相册管理</router-link>
           <span class="divider">|</span>
           <button class="logout-btn" @click="logout" title="退出登录">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -56,6 +68,9 @@ import { useI18n, locales, setLocale, getLocale } from './i18n';
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
+
+/* ---- 移动端菜单 ---- */
+const mobileMenuOpen = ref(false);
 
 /* ---- 排序 ---- */
 const sortOpen = ref(false);
@@ -186,4 +201,123 @@ img {
   -webkit-user-select: none;
   pointer-events: auto;
 }
+
+/* ========== 移动端响应式 ========== */
+
+/* 汉堡菜单按钮（默认隐藏） */
+.hamburger-btn {
+  display: none;
+  place-items: center;
+  width: 36px; height: 36px; padding: 0;
+  background: transparent; border: none; color: #888;
+  cursor: pointer; z-index: 25;
+}
+.hamburger-btn:hover { color: #333; }
+
+@media (max-width: 767px) {
+  .app-header { padding: 0.75rem 1rem; }
+
+  .hamburger-btn { display: grid; }
+
+  .app-nav {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 220px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    background: rgba(255,255,255,0.98);
+    backdrop-filter: blur(12px);
+    border-left: 1px solid #ececec;
+    padding: 4.5rem 1.5rem 2rem;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    z-index: 22;
+    flex-wrap: nowrap;
+  }
+  .app-nav.mobile-open {
+    transform: translateX(0);
+  }
+
+  .app-nav .app-user {
+    display: block; width: 100%;
+    font-size: 1rem; padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .app-nav a, .app-nav .logout-btn {
+    display: flex; width: 100%;
+    padding: 0.75rem 0; font-size: 0.95rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .app-nav .divider { display: none; }
+
+  .app-nav .sort-icon-wrap {
+    width: 100%; padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  /* 未登录状态语言切换 */
+  .app-nav .lang-link {
+    display: block; width: 100%;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .app-main { padding: 1rem; }
+}
+
+/* ========== Element Plus 主题覆盖 ========== */
+/* 主色调改为黑色 */
+.el-button--primary {
+  --el-button-bg-color: #111;
+  --el-button-border-color: #111;
+  --el-button-hover-bg-color: #333;
+  --el-button-hover-border-color: #333;
+  --el-button-active-bg-color: #000;
+  --el-button-active-border-color: #000;
+}
+
+.el-button--primary.is-round {
+  border-radius: 6px;
+}
+
+/* 输入框样式 */
+.el-input__wrapper {
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px #d9d9d9 inset;
+}
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px #bbb inset;
+}
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px #111 inset;
+}
+
+/* 选择器 */
+.el-select .el-input__wrapper { border-radius: 6px; }
+.el-select-dropdown__item.selected { font-weight: 600; }
+
+/* 表单标签 */
+.el-form-item__label { font-size: 0.95rem; color: #333; }
+
+/* 消息提示 */
+.el-message { min-width: auto; }
+
+/* 对话框 */
+.el-message-box { border-radius: 8px; }
+.el-message-box__btns .el-button--primary {
+  --el-button-bg-color: #111;
+  --el-button-border-color: #111;
+}
+
+/* 复选框 */
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: #111;
+  border-color: #111;
+}
+
+/* 未登录时语言切换使用 router-link */
+.app-nav .lang-link.router-link-active { font-weight: 600; color: #111; }
 </style>

@@ -11,23 +11,24 @@
     </div>
 
     <!-- 创建相册 -->
-    <form class="card-section create-form-wrap" v-if="showCreateForm" @submit.prevent="handleCreateGroup">
+    <form class="card-section" v-if="showCreateForm" @submit.prevent="handleCreateGroup">
       <h2>创建新相册</h2>
       <div class="form-row">
-        <input v-model="form.title" placeholder="相册标题" required />
+        <el-input v-model="form.title" placeholder="相册标题" />
       </div>
       <div class="form-row">
-        <CustomSelect :items="cameraBrands" v-model="form.cameraBrand" placeholder="— 选择相机品牌 —" :brandColors="brandColorMap" />
-        <input v-model="form.cameraModel" placeholder="相机型号" :disabled="!form.cameraBrand" />
+        <el-select v-model="form.cameraBrand" placeholder="— 选择相机品牌 —" clearable filterable style="flex:1;min-width:140px">
+          <el-option v-for="b in CAMERA_BRANDS" :key="b.id" :label="b.label" :value="b.id" />
+        </el-select>
+        <el-input v-model="form.cameraModel" placeholder="相机型号" :disabled="!form.cameraBrand" style="flex:1;min-width:140px" />
       </div>
       <div class="form-row">
-        <CustomSelect :items="filmStocks" v-model="form.filmStock" placeholder="— 选择胶卷型号 —" style="flex:2" :disabled="!form.isFilm" />
-        <label class="film-toggle">
-          <input type="checkbox" v-model="form.isFilm" />
-          <span style="margin-left:2px">胶片拍摄</span>
-        </label>
+        <el-select v-model="form.filmStock" placeholder="— 选择胶卷型号 —" clearable filterable :disabled="!form.isFilm" style="flex:2;min-width:140px">
+          <el-option v-for="f in FILM_STOCKS" :key="f.id" :label="f.label" :value="f.id" />
+        </el-select>
+        <el-checkbox v-model="form.isFilm" label="胶片拍摄" />
       </div>
-      <button type="submit">创建</button>
+      <el-button type="primary" native-type="submit">创建</el-button>
     </form>
 
     <!-- 分组列表 -->
@@ -52,18 +53,19 @@
               </button>
             </div>
             <span class="image-count" v-if="editingGroup !== group.id">{{ group.imageCount }} 张图片</span>
-            <!-- 相机/胶片编辑面板（全部同时展示） -->
+            <!-- 相机/胶片编辑面板 -->
             <div class="camera-edit-panel" v-if="editingGroup === group.id && editingField === 'camera'">
               <div class="form-row">
-                <CustomSelect :items="cameraBrands" v-model="editForm.cameraBrand" placeholder="相机品牌" :brandColors="brandColorMap" />
-                <input v-model="editForm.cameraModel" placeholder="相机型号" />
+                <el-select v-model="editForm.cameraBrand" placeholder="相机品牌" clearable filterable style="flex:1;min-width:130px">
+                  <el-option v-for="b in CAMERA_BRANDS" :key="b.id" :label="b.label" :value="b.id" />
+                </el-select>
+                <el-input v-model="editForm.cameraModel" placeholder="相机型号" style="flex:1;min-width:130px" />
               </div>
               <div class="form-row">
-                <CustomSelect :items="filmStocks" v-model="editForm.filmStock" placeholder="胶卷型号" style="flex:2" :disabled="!editForm.isFilm" />
-                <label class="film-toggle">
-                  <input type="checkbox" v-model="editForm.isFilm" />
-                  <span style="margin-left:2px">胶片</span>
-                </label>
+                <el-select v-model="editForm.filmStock" placeholder="胶卷型号" clearable filterable :disabled="!editForm.isFilm" style="flex:2;min-width:130px">
+                  <el-option v-for="f in FILM_STOCKS" :key="f.id" :label="f.label" :value="f.id" />
+                </el-select>
+                <el-checkbox v-model="editForm.isFilm" label="胶片" />
               </div>
             </div>
             <!-- 展示 -->
@@ -209,14 +211,11 @@
     </div>
     </div>
 
-    <!-- Toast 消息 -->
-    <div class="toast" v-if="toastText">{{ toastText }}</div>
   </section>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
-import CustomSelect from './CustomSelect.vue';
 import {
   createGroup as createGroupApi,
   getGroups,
@@ -228,116 +227,30 @@ import {
   setCover as setCoverApi,
   reorderImages as reorderImagesApi
 } from '../api/gallery';
+import {
+  CAMERA_BRANDS, FILM_STOCKS, BRAND_COLOR_MAP,
+  brandLabel, brandEnLabel, filmLabel, getBrandLogo,
+  validateImageFile
+} from '../constants';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const groups = ref([]);
-const toastText = ref('');
-let toastTimer = null;
-function showToast(msg, duration = 5000) {
-  toastText.value = msg;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { toastText.value = ''; }, duration);
-}
 const editingGroup = ref(null);
 const editingField = ref(null);
-const brandColorMap = { c: '333', n: '333', f: 'b64710', p: 'c9302b', h: '004d73', r: 'e60012', o: '005aff' };
-const cameraBrands = [
-  { id: 'canon', label: 'CANON 佳能', logo: '/logo/canon.svg' },
-  { id: 'nikon', label: 'NIKON 尼康', logo: '/logo/nikon.svg' },
-  { id: 'fujifilm', label: 'FUJIFILM 富士', logo: '/logo/fujifilm.svg' },
-  { id: 'pentax', label: 'PENTAX 宾得', logo: '/logo/pentax.svg' },
-  { id: 'panasonic', label: 'PANASONIC 松下', logo: '/logo/panasonic.svg' },
-  { id: 'hasselblad', label: 'HASSELBLAD 哈苏', logo: '/logo/hasselblad.svg' },
-  { id: 'ricoh', label: 'RICOH 理光', logo: '/logo/ricoh.svg' },
-  { id: 'contax', label: 'CONTAX 康泰时', logo: '/logo/contax.svg' },
-  { id: 'phaseone', label: 'PHASE ONE 飞思', logo: '/logo/phaseone.svg' },
-];
-
-const filmStocks = [
-  { id: 'kodak-portra160', label: 'KODAK PORTRA 160' },
-  { id: 'kodak-portra400', label: 'KODAK PORTRA 400' },
-  { id: 'kodak-portra800', label: 'KODAK PORTRA 800' },
-  { id: 'kodak-ektar100', label: 'KODAK EKTAR 100' },
-  { id: 'kodak-gold200', label: 'KODAK GOLD 200' },
-  { id: 'kodak-triX400', label: 'KODAK TRI-X 400' },
-  { id: 'kodak-tmax400', label: 'KODAK T-MAX 400' },
-  { id: 'kodak-colorplus200', label: 'KODAK COLORPLUS 200' },
-  { id: 'kodak-ultramax400', label: 'KODAK ULTRAMAX 400' },
-  { id: 'kodak-ektachrome100', label: 'KODAK EKTACHROME E100' },
-  { id: 'fuji-provia100f', label: 'FUJIFILM PROVIA 100F' },
-  { id: 'fuji-velvia50', label: 'FUJIFILM VELVIA 50' },
-  { id: 'fuji-velvia100', label: 'FUJIFILM VELVIA 100' },
-  { id: 'fuji-superia400', label: 'FUJIFILM SUPERIA X-TRA 400' },
-  { id: 'fuji-acros100', label: 'FUJIFILM NEOPAN 100 ACROS' },
-  { id: 'fuji-neopan400', label: 'FUJIFILM NEOPAN 400' },
-  { id: 'ilford-hp5', label: 'ILFORD HP5 PLUS 400' },
-  { id: 'ilford-fp4', label: 'ILFORD FP4 PLUS 125' },
-  { id: 'ilford-delta100', label: 'ILFORD DELTA 100' },
-  { id: 'ilford-delta400', label: 'ILFORD DELTA 400' },
-  { id: 'ilford-delta3200', label: 'ILFORD DELTA 3200' },
-  { id: 'ilford-panf', label: 'ILFORD PAN F PLUS 50' },
-  { id: 'lomo100', label: 'LOMOGRAPHY 100' },
-  { id: 'lomo400', label: 'LOMOGRAPHY 400' },
-  { id: 'lomo800', label: 'LOMOGRAPHY 800' },
-  { id: 'lomo-metropolis', label: 'LOMOGRAPHY METROPOLIS' },
-  { id: 'lomo-purple', label: 'LOMOGRAPHY PURPLE' },
-  { id: 'cinestill-50d', label: 'CINESTILL 50D' },
-  { id: 'cinestill-800t', label: 'CINESTILL 800T' },
-  { id: 'cinestill-bwxx', label: 'CINESTILL BWXX' },
-  { id: 'rollei-infrared', label: 'ROLLEI INFRARED 400' },
-  { id: 'rollei-retro400s', label: 'ROLLEI RETRO 400S' },
-];
 
 const form = reactive({ title: '', cameraBrand: '', cameraModel: '', isFilm: false, filmStock: '' });
 const editForm = reactive({ title: '', cameraBrand: '', cameraModel: '', filmStock: '', isFilm: false });
 
-function getBrandLogo(id) {
-  const b = cameraBrands.find(c => c.id === id);
-  return b ? b.logo : '';
+function showToast(msg, duration = 4000) {
+  ElMessage({ message: msg, duration });
 }
 
-function l(s) { return (s || '').toUpperCase(); }
-function filmLabel(id) { const f = filmStocks.find(x => x.id === id); return f ? f.label : l(id); }
-function brandLabel(id) { const b = cameraBrands.find(x => x.id === id); return b ? b.label : l(id); }
-function brandEnLabel(id) { const l = brandLabel(id); return l ? l.split(/[\s一-鿿]+/)[0] || l : l; }
-
-function onSelectBlur(e, groupId, field) {
-  editForm[field] = e.target.value;
-  if (editingGroup.value === groupId) scheduleSave();
-}
 const showCreateForm = ref(false);
 
 /* ---- 展开的图片管理 ---- */
 const expandedGroupId = ref(null);
 const groupImages = ref([]);
 const selectedUrls = ref(new Set());
-
-/* ---- 文件校验（大小 + 魔术字节） ---- */
-const ALLOWED_MAGIC = [
-  { magic: [0xFF, 0xD8, 0xFF], name: 'JPEG' },
-  { magic: [0x89, 0x50, 0x4E, 0x47], name: 'PNG' },
-  { magic: [0x42, 0x4D], name: 'BMP' },
-  { magic: [0x49, 0x49, 0x2A, 0x00], name: 'TIFF' },
-  { magic: [0x4D, 0x4D, 0x00, 0x2A], name: 'TIFF' },
-];
-
-function readFileHeader(file, len) {
-  return new Promise(r => {
-    const fr = new FileReader();
-    fr.onload = () => r(Array.from(new Uint8Array(fr.result)));
-    fr.onerror = () => r([]);
-    fr.readAsArrayBuffer(file.slice(0, len));
-  });
-}
-
-async function validateImageFile(file) {
-  if (file.size > 20 * 1024 * 1024)
-    return { ok: false, msg: `文件大小超过 20MB: ${file.name}` };
-  const header = await readFileHeader(file, 8);
-  const match = ALLOWED_MAGIC.some(t => t.magic.every((b, i) => header[i] === b));
-  if (!match)
-    return { ok: false, msg: `不支持的文件格式（仅 JPEG/PNG/BMP/TIFF）: ${file.name}` };
-  return { ok: true };
-}
 
 /* ---- 并发上传 + 每个文件进度条 ---- */
 const uploading = ref(false);
@@ -464,10 +377,10 @@ async function finishEdit(groupId) {
 /* ---- 点击外侧关闭创建表单 + 自动保存 ---- */
 function onDocumentClick(e) {
   // 点击 icon 按钮时不触发保存（避免编辑刚打开就保存）
-  if (e.target.closest('.icon-edit-inline, .add-icon-btn, .img-checkbox, .cover-overlay, .img-item, .camera-edit-panel, .custom-select, .cs-dropdown, .cs-trigger')) return;
+  if (e.target.closest('.icon-edit-inline, .add-icon-btn, .img-checkbox, .cover-overlay, .img-item, .camera-edit-panel, .el-select, .el-checkbox, .el-button')) return;
 
   if (showCreateForm.value) {
-    const wrap = document.querySelector('.create-form-wrap');
+    const wrap = document.querySelector('.card-section');
     const btn = document.querySelector('.add-icon-btn');
     if (wrap && !wrap.contains(e.target) && btn && !btn.contains(e.target)) {
       showCreateForm.value = false;
@@ -567,7 +480,11 @@ async function handleUpdateGroup(groupId) {
 /* ---- 删除分类 ---- */
 async function handleDeleteGroup(group, groupId) {
   const name = group?.title || groupId;
-  if (!confirm(`确定删除「${name}」及其所有图片？此操作不可恢复。`)) return;
+  try {
+    await ElMessageBox.confirm(`确定删除「${name}」及其所有图片？此操作不可恢复。`, '确认删除', {
+      confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+    });
+  } catch { return; }
   try {
     await deleteGroupApi(groupId);
     showToast(`相册「${name}」已删除`);
@@ -633,7 +550,11 @@ function toggleSelect(imgUrl) {
 /* ---- 批量删除 ---- */
 async function handleBatchDelete(groupId) {
   if (!selectedUrls.value.size) return;
-  if (!confirm(`确定删除选中的 ${selectedUrls.value.size} 张图片？`)) return;
+  try {
+    await ElMessageBox.confirm(`确定删除选中的 ${selectedUrls.value.size} 张图片？`, '确认删除', {
+      confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+    });
+  } catch { return; }
   for (const url of selectedUrls.value) {
     const fileName = url.substring(url.lastIndexOf('/') + 1);
     try {
@@ -699,28 +620,6 @@ onUnmounted(() => {
 .card-section h2 { margin: 0; font-size: 1.15rem; }
 
 .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-.form-row input, .form-row select {
-  flex: 1; min-width: 140px; padding: 0.7rem 0.9rem;
-  border: 1px solid #d9d9d9; font-size: 0.95rem; background: #fff;
-}
-.film-toggle {
-  display: flex; align-items: center; gap: 0.25rem;
-  font-size: 0.9rem; cursor: pointer; padding: 0; white-space: nowrap;
-}
-.film-toggle input { width: auto; margin: 0; }
-
-.brand-logo { width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; }
-.exif-logo {
-  height: 1.3em; width: auto; vertical-align: middle;
-  margin-right: 10px;
-  /* 1.3em 补偿 simple-icons ~25% 内边距，使图案与文字等高 */
-}
-
-button {
-  padding: 0.7rem 1.2rem; border: none;
-  background: #111; color: #fff; cursor: pointer; font-size: 0.9rem;
-}
-button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* --- 分组列表 --- */
 .group-table-wrap { display: grid; gap: 0.75rem; }
@@ -1009,46 +908,16 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   padding-top: 0.5rem;
 }
 
-/* --- 上传进度条 --- */
-.upload-progress {
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.3rem 0;
-}
-.progress-bar {
-  flex: 1; height: 5px;
-  background: #eee; border-radius: 3px; overflow: hidden;
-}
-.progress-fill {
-  height: 100%; background: #111; border-radius: 3px;
-  transition: width 0.25s;
-}
-.progress-text {
-  font-size: 0.8rem; color: #555; white-space: nowrap;
-  min-width: 3em; text-align: right;
-}
-.progress-file {
-  font-size: 0.75rem; color: #999; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; max-width: 120px;
-}
-
-/* --- Toast 消息 --- */
-.toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.82);
-  color: #fff;
-  font-size: 0.9rem;
-  padding: 10px 24px;
-  border-radius: 6px;
-  z-index: 9999;
-  pointer-events: none;
-  animation: toast-in 0.2s ease;
-}
-
-@keyframes toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ========== 响应式 ========== */
+@media (max-width: 767px) {
+  .admin-view { padding: 0 0.5rem; gap: 1rem; }
+  .group-info { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .group-actions { align-self: flex-end; }
+  .preview-strip { padding: 0 0.75rem 0.75rem; }
+  .preview-thumb { width: 56px; height: 56px; }
+  .group-images { padding: 0.75rem; }
+  .img-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+  .img-hint { display: none; }
+  .card-section { padding: 1rem; }
 }
 </style>

@@ -84,6 +84,8 @@ import {
   deleteImage as deleteImageApi,
   uploadImage as uploadImageApi
 } from '../api/gallery';
+import { validateImageFile } from '../constants';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const route = useRoute();
 const router = useRouter();
@@ -111,33 +113,6 @@ const isAdmin = computed(() => {
   } catch { return false; }
 });
 const showUpload = ref(false);
-const uploadFile = ref(null);
-const ALLOWED_MAGIC = [
-  { magic: [0xFF, 0xD8, 0xFF], name: 'JPEG' },
-  { magic: [0x89, 0x50, 0x4E, 0x47], name: 'PNG' },
-  { magic: [0x42, 0x4D], name: 'BMP' },
-  { magic: [0x49, 0x49, 0x2A, 0x00], name: 'TIFF' },
-  { magic: [0x4D, 0x4D, 0x00, 0x2A], name: 'TIFF' },
-];
-
-function readFileHeader(file, len) {
-  return new Promise(r => {
-    const fr = new FileReader();
-    fr.onload = () => r(Array.from(new Uint8Array(fr.result)));
-    fr.onerror = () => r([]);
-    fr.readAsArrayBuffer(file.slice(0, len));
-  });
-}
-
-async function validateImageFile(file) {
-  if (file.size > 20 * 1024 * 1024)
-    return { ok: false, msg: `文件大小超过 20MB: ${file.name}` };
-  const header = await readFileHeader(file, 8);
-  const match = ALLOWED_MAGIC.some(t => t.magic.every((b, i) => header[i] === b));
-  if (!match)
-    return { ok: false, msg: `不支持的文件格式（仅 JPEG/PNG/BMP/TIFF）: ${file.name}` };
-  return { ok: true };
-}
 
 const uploading = ref(false);
 const uploadItems = ref([]);
@@ -145,13 +120,15 @@ let uploadId = 0;
 const CONCURRENCY = 3;
 
 async function handleDeleteGroup() {
-  if (!confirm('确定删除此分类及其所有图片？此操作不可恢复！')) return;
   try {
+    await ElMessageBox.confirm('确定删除此分类及其所有图片？此操作不可恢复！', '确认删除', {
+      confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+    });
     await deleteGroupApi(currentGroupId.value);
+    ElMessage.success('已删除');
     router.push('/home');
   } catch (e) {
-    console.error('删除失败', e);
-    alert('删除失败');
+    if (e !== 'cancel') console.error('删除失败', e);
   }
 }
 
@@ -159,7 +136,7 @@ async function uploadFiles(groupId, files) {
   const arr = Array.from(files);
   for (const f of arr) {
     const v = await validateImageFile(f);
-    if (!v.ok) { alert(v.msg); return; }
+    if (!v.ok) { ElMessage.error(v.msg); return; }
   }
   const items = arr.map(f => ({ id: ++uploadId, name: f.name, status: 'pending', percent: 0 }));
   uploadItems.value = items;
@@ -189,7 +166,7 @@ async function uploadFiles(groupId, files) {
   setTimeout(() => { uploadItems.value = []; }, 1500);
   await loadImages(groupId);
   const ok = items.filter(it => it.status === 'done').length;
-  if (ok > 0) alert(`已上传 ${ok}/${arr.length} 张图片`);
+  if (ok > 0) ElMessage.success(`已上传 ${ok}/${arr.length} 张图片`);
 }
 
 function triggerFileInput() {
@@ -207,14 +184,16 @@ function triggerFileInput() {
 }
 
 async function handleDeleteImage(imgUrl) {
-  if (!confirm('确定删除此图片？')) return;
-  const fileName = imgUrl.substring(imgUrl.lastIndexOf('/') + 1);
   try {
+    await ElMessageBox.confirm('确定删除此图片？', '确认删除', {
+      confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+    });
+    const fileName = imgUrl.substring(imgUrl.lastIndexOf('/') + 1);
     await deleteImageApi(currentGroupId.value, fileName);
     await loadImages(currentGroupId.value);
+    ElMessage.success('图片已删除');
   } catch (e) {
-    console.error('删除图片失败', e);
-    alert('删除图片失败');
+    if (e !== 'cancel') console.error('删除图片失败', e);
   }
 }
 
@@ -344,6 +323,18 @@ watch(
   max-width: 1200px;
   margin: 0 auto;
   transition: filter 0.3s ease;
+}
+
+@media (max-width: 1023px) {
+  .image-grid { column-count: 3; column-gap: 1rem; }
+}
+
+@media (max-width: 767px) {
+  .image-grid { column-count: 2; column-gap: 0.75rem; }
+  .gallery-view { padding: 1rem 0.5rem 2rem; }
+  .nav-button.left { left: 0.25rem; font-size: 1.4rem; }
+  .nav-button.right { right: 0.25rem; font-size: 1.4rem; }
+  .close-button { font-size: 1.5rem; }
 }
 
 .image-grid.blurred {
