@@ -152,7 +152,7 @@ body { margin: 0; }
 }
 
 .logo {
-  font-size: 1rem; letter-spacing: 0.15em; text-transform: uppercase;
+  font-size: 1rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
   cursor: pointer; color: #111; text-decoration: none;
 }
 .logo:hover { opacity: 0.7; }
