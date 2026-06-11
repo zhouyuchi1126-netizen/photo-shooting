@@ -30,7 +30,6 @@
         </el-form-item>
       </el-form>
 
-      <p class="help-text">{{ t('noAccount') }} <router-link to="/register" class="highlight-link">{{ t('goToRegister') }}</router-link></p>
     </div>
   </section>
 </template>

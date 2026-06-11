@@ -127,7 +127,7 @@ const user = computed(() => {
 
 function logout() {
   localStorage.removeItem('user');
-  router.push('/');
+  router.push('/home');
 }
 </script>
 
