@@ -42,3 +42,15 @@ export async function phoneLogin(phone, code) {
   const response = await phoneApi.post('/login', { phone, code });
   return response.data;
 }
+
+const adminAuthApi = axios.create({ baseURL: '/api/admin/auth' });
+
+export async function sendAdminCode() {
+  const response = await adminAuthApi.post('/send-code');
+  return response.data;
+}
+
+export async function verifyAdminCode(code) {
+  const response = await adminAuthApi.post('/verify-code', { code });
+  return response.data;
+}
