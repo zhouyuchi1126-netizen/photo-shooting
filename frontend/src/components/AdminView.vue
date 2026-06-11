@@ -10,7 +10,7 @@
             <span v-if="sending" class="btn-loading">···</span>
             {{ sending ? '发送中...' : '发送验证码' }}
           </button>
-          <el-input v-model="adminCode" placeholder="请输入验证码" maxlength="6" class="code-input" />
+          <el-input v-model="adminCode" placeholder="" maxlength="6" class="code-input" />
           <button class="submit-btn" :disabled="adminCode.length !== 6 || verifying" @click="handleVerifyCode">
             <span v-if="verifying" class="btn-loading">···</span>
             {{ verifying ? '验证中...' : '登录' }}
