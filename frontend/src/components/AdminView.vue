@@ -4,21 +4,19 @@
     <div class="auth-view" v-if="!isAdminAuthed">
       <div class="auth-card">
         <h1>管理员登录</h1>
-        <p style="color:#666;font-size:0.9rem;margin-bottom:1rem;text-align:center;">
-          验证码将发送到管理员邮箱
-        </p>
-        <div class="login-form" style="display:grid;gap:1rem;">
-          <el-button type="primary" :loading="sending" @click="handleSendCode" round>
+        <p class="auth-desc">验证码将发送到管理员邮箱</p>
+        <div class="login-form">
+          <button class="submit-btn" :disabled="sending" @click="handleSendCode">
+            <span v-if="sending" class="btn-loading">···</span>
             {{ sending ? '发送中...' : '发送验证码' }}
-          </el-button>
-          <el-input v-model="adminCode" placeholder="请输入验证码" maxlength="6" style="text-align:center;font-size:1.2rem;letter-spacing:0.3em" />
-          <el-button type="primary" :disabled="adminCode.length !== 6" :loading="verifying" @click="handleVerifyCode" round>
+          </button>
+          <el-input v-model="adminCode" placeholder="请输入验证码" maxlength="6" class="code-input" />
+          <button class="submit-btn" :disabled="adminCode.length !== 6 || verifying" @click="handleVerifyCode">
+            <span v-if="verifying" class="btn-loading">···</span>
             {{ verifying ? '验证中...' : '登录' }}
-          </el-button>
+          </button>
         </div>
-        <p style="margin-top:1rem;text-align:center;color:#999;font-size:0.85rem;">
-          <router-link to="/home">返回首页</router-link>
-        </p>
+        <p class="help-text"><router-link to="/home" class="highlight-link">返回首页</router-link></p>
       </div>
     </div>
     <template v-if="isAdminAuthed">
@@ -993,7 +991,21 @@ onUnmounted(() => {
   .card-section { padding: 1rem; }
 }
 
+/* --- 管理员登录（与 LoginView 样式一致） --- */
 .auth-view { display: grid; place-items: center; min-height: 70vh; }
 .auth-card { width: min(420px, 100%); box-sizing: border-box; border: 1px solid #e6e6e6; padding: 2rem; border-radius: 8px; box-shadow: 0 0 24px rgba(0,0,0,0.04); }
-.auth-card h1 { margin: 0 0 0.5rem; font-size: 1.8rem; text-align: center; }
+.auth-card h1 { margin: 0 0 1rem; font-size: 2rem; text-align: center; }
+.auth-desc { margin: 0 0 1rem; color: #555; font-size: 0.9rem; text-align: center; }
+.login-form { display: grid; gap: 1rem; }
+.login-form .submit-btn {
+  width: 100%; padding: 0.85rem 1rem; border: none; border-radius: 6px;
+  background: #111; color: white; font-size: 1rem; cursor: pointer;
+}
+.login-form .submit-btn:hover { opacity: 0.85; }
+.login-form .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-loading { margin-right: 4px; }
+.code-input :deep(.el-input__inner) { text-align: center; font-size: 1.2rem; letter-spacing: 0.3em; }
+.help-text { margin-top: 1rem; text-align: center; font-size: 0.95rem; }
+.highlight-link { color: #111; font-weight: 600; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
+.highlight-link:hover { border-bottom-color: #111; }
 </style>
