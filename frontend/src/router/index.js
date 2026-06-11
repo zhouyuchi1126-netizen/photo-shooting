@@ -13,24 +13,16 @@ const routes = [
   { path: '/admin', name: 'Admin', component: AdminView }
 ];
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes
-});
+const router = createRouter({ history: createWebHistory(), routes });
 
 router.beforeEach((to, from, next) => {
-  const currentUser = localStorage.getItem('user');
-  const isAuthenticated = !!currentUser;
-  const user = currentUser ? JSON.parse(currentUser) : null;
-  if ((to.name === 'Home' || to.name === 'Gallery' || to.name === 'Admin') && !isAuthenticated) {
-    return next({ name: 'Login' });
-  }
-  if ((to.name === 'Login' || to.name === 'Register') && isAuthenticated) {
-    return next({ name: 'Home' });
-  }
-  if (to.name === 'Admin' && user?.role !== 'admin') {
-    return next({ name: 'Home' });
-  }
+  const user = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const isAdmin = user?.role === 'admin';
+
+  if (to.name === 'Admin' && !isAdmin) return next({ name: 'Login' });
+  if ((to.name === 'Login' || to.name === 'Register') && isAdmin) return next({ name: 'Admin' });
+  if ((to.name === 'Login' || to.name === 'Register') && user && !isAdmin) return next({ name: 'Home' });
+
   next();
 });
 
