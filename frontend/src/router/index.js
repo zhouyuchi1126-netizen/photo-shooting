@@ -6,7 +6,8 @@ import GalleryView from '../components/GalleryView.vue';
 import AdminView from '../components/AdminView.vue';
 
 const routes = [
-  { path: '/', name: 'Login', component: LoginView },
+  { path: '/', redirect: '/home' },
+  { path: '/login', name: 'Login', component: LoginView },
   { path: '/register', name: 'Register', component: RegisterView },
   { path: '/home', name: 'Home', component: HomeView },
   { path: '/gallery/:groupId', name: 'Gallery', component: GalleryView, props: true },
