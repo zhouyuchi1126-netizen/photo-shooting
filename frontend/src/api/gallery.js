@@ -36,10 +36,12 @@ export async function createGroup(payload) {
   return res.data;
 }
 
-export async function uploadImage(groupId, file) {
+export async function uploadImage(groupId, file, onProgress) {
   const fd = new FormData();
   fd.append('file', file);
-  const res = await api.post(`/admin/groups/${groupId}/images`, fd);
+  const res = await api.post(`/admin/groups/${groupId}/images`, fd, {
+    onUploadProgress: onProgress
+  });
   return res.data;
 }
 

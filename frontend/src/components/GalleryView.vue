@@ -144,9 +144,13 @@ async function uploadFiles(groupId, files) {
 
   const pool = async (file, item) => {
     item.status = 'uploading';
-    item.percent = 10;
+    item.percent = 0;
     try {
-      const res = await uploadImageApi(groupId, file);
+      const res = await uploadImageApi(groupId, file, (progressEvent) => {
+        if (progressEvent.total) {
+          item.percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+        }
+      });
       if (res && res.message !== '上传成功') throw new Error(res.message || '上传失败');
       item.status = 'done';
       item.percent = 100;
