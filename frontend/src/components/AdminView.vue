@@ -1,7 +1,28 @@
 <template>
   <section class="admin-view">
+    <!-- 管理员验证码登录 -->
+    <div class="auth-view" v-if="!isAdminAuthed">
+      <div class="auth-card">
+        <h1>管理员登录</h1>
+        <p style="color:#666;font-size:0.9rem;margin-bottom:1rem;text-align:center;">
+          验证码将发送到管理员邮箱
+        </p>
+        <div class="login-form" style="display:grid;gap:1rem;">
+          <el-button type="primary" :loading="sending" @click="handleSendCode" round>
+            {{ sending ? '发送中...' : '发送验证码' }}
+          </el-button>
+          <el-input v-model="adminCode" placeholder="请输入验证码" maxlength="6" style="text-align:center;font-size:1.2rem;letter-spacing:0.3em" />
+          <el-button type="primary" :disabled="adminCode.length !== 6" :loading="verifying" @click="handleVerifyCode" round>
+            {{ verifying ? '验证中...' : '登录' }}
+          </el-button>
+        </div>
+        <p style="margin-top:1rem;text-align:center;color:#999;font-size:0.85rem;">
+          <router-link to="/home">返回首页</router-link>
+        </p>
+      </div>
+    </div>
+    <template v-if="isAdminAuthed">
     <div class="admin-header">
-      <h1>相册管理</h1>
       <button class="add-icon-btn" data-tip="创建新分类" @click.stop="showCreateForm = !showCreateForm">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="5" x2="12" y2="19"/>
@@ -210,6 +231,7 @@
       </div>
     </div>
     </div>
+    </template>
 
   </section>
 </template>
@@ -227,6 +249,7 @@ import {
   setCover as setCoverApi,
   reorderImages as reorderImagesApi
 } from '../api/gallery';
+import { sendAdminCode, verifyAdminCode } from '../api/auth';
 import {
   CAMERA_BRANDS, FILM_STOCKS, BRAND_COLOR_MAP,
   brandLabel, brandEnLabel, filmLabel, getBrandLogo,
@@ -237,6 +260,46 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 const groups = ref([]);
 const editingGroup = ref(null);
 const editingField = ref(null);
+
+const isAdminAuthed = computed(() => {
+  try {
+    const u = JSON.parse(localStorage.getItem('user'));
+    return u?.role === 'admin';
+  } catch { return false; }
+});
+
+const sending = ref(false);
+const verifying = ref(false);
+const adminCode = ref('');
+
+async function handleSendCode() {
+  sending.value = true;
+  try {
+    const res = await sendAdminCode();
+    if (res.success) {
+      ElMessage.success(res.message);
+    } else {
+      ElMessage.error(res.message);
+    }
+  } catch { ElMessage.error('发送失败，请检查服务器配置'); }
+  sending.value = false;
+}
+
+async function handleVerifyCode() {
+  if (adminCode.value.length !== 6) return;
+  verifying.value = true;
+  try {
+    const res = await verifyAdminCode(adminCode.value);
+    if (res.success) {
+      localStorage.setItem('user', JSON.stringify(res));
+      ElMessage.success('登录成功');
+      await loadGroups();
+    } else {
+      ElMessage.error(res.message);
+    }
+  } catch { ElMessage.error('验证失败'); }
+  verifying.value = false;
+}
 
 const form = reactive({ title: '', cameraBrand: '', cameraModel: '', isFilm: false, filmStock: '' });
 const editForm = reactive({ title: '', cameraBrand: '', cameraModel: '', filmStock: '', isFilm: false });
@@ -926,4 +989,8 @@ onUnmounted(() => {
   .img-hint { display: none; }
   .card-section { padding: 1rem; }
 }
+
+.auth-view { display: grid; place-items: center; min-height: 70vh; }
+.auth-card { width: min(420px, 100%); box-sizing: border-box; border: 1px solid #e6e6e6; padding: 2rem; border-radius: 8px; box-shadow: 0 0 24px rgba(0,0,0,0.04); }
+.auth-card h1 { margin: 0 0 0.5rem; font-size: 1.8rem; text-align: center; }
 </style>
