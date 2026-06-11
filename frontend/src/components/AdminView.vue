@@ -261,7 +261,9 @@ const groups = ref([]);
 const editingGroup = ref(null);
 const editingField = ref(null);
 
+const adminAuthKey = ref(0);
 const isAdminAuthed = computed(() => {
+  adminAuthKey.value; // force reactivity on localStorage changes
   try {
     const u = JSON.parse(localStorage.getItem('user'));
     return u?.role === 'admin';
@@ -292,6 +294,7 @@ async function handleVerifyCode() {
     const res = await verifyAdminCode(adminCode.value);
     if (res.success) {
       localStorage.setItem('user', JSON.stringify(res));
+      adminAuthKey.value++;
       ElMessage.success('登录成功');
       await loadGroups();
     } else {

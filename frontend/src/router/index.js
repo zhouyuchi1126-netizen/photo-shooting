@@ -17,11 +17,11 @@ const router = createRouter({ history: createWebHistory(), routes });
 
 router.beforeEach((to, from, next) => {
   const user = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
-  const isAdmin = user?.role === 'admin';
 
-  if (to.name === 'Admin' && !isAdmin) return next({ name: 'Login' });
-  if ((to.name === 'Login' || to.name === 'Register') && isAdmin) return next({ name: 'Admin' });
-  if ((to.name === 'Login' || to.name === 'Register') && user && !isAdmin) return next({ name: 'Home' });
+  // 已登录管理员访问登录/注册页 → 跳管理后台
+  if ((to.name === 'Login' || to.name === 'Register') && user?.role === 'admin') return next({ name: 'Admin' });
+  // 已登录普通用户访问登录/注册页 → 跳首页
+  if ((to.name === 'Login' || to.name === 'Register') && user && user.role !== 'admin') return next({ name: 'Home' });
 
   next();
 });
