@@ -87,7 +87,7 @@ public class AdminController {
         try {
             Boolean isFilm = payload.containsKey("isFilm") ? "true".equals(payload.get("isFilm")) : null;
             GalleryGroup group = galleryService.updateGroup(groupId,
-                    payload.get("title"),
+                    payload.get("title"), payload.get("newGroupId"),
                     payload.get("cameraBrand"), payload.get("cameraModel"), isFilm, payload.get("filmStock"));
             return ResponseEntity.ok(group);
         } catch (IllegalArgumentException e) {

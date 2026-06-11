@@ -11,4 +11,5 @@ public interface AlbumMapper {
     void insert(Album album);
     void update(Album album);
     void deleteById(@Param("id") String id);
+    void updateId(@Param("oldId") String oldId, @Param("newId") String newId);
 }

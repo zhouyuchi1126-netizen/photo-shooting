@@ -61,6 +61,18 @@ public class OssStorageService implements StorageService {
     }
 
     @Override
+    public void renameGroup(String oldGroupId, String newGroupId) {
+        String oldPrefix = oldGroupId + "/";
+        String newPrefix = newGroupId + "/";
+        var objects = ossClient.listObjects(bucket, oldPrefix);
+        for (var summary : objects.getObjectSummaries()) {
+            String newKey = newPrefix + summary.getKey().substring(oldPrefix.length());
+            ossClient.copyObject(bucket, summary.getKey(), bucket, newKey);
+            ossClient.deleteObject(bucket, summary.getKey());
+        }
+    }
+
+    @Override
     public void deleteGroup(String groupId) {
         // 列出所有以 groupId/ 开头的文件并批量删除
         String prefix = groupId + "/";

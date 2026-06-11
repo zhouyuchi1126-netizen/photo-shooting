@@ -60,6 +60,18 @@ public class LocalStorageService implements StorageService {
     }
 
     @Override
+    public void renameGroup(String oldGroupId, String newGroupId) {
+        Path oldDir = groupDir(oldGroupId);
+        Path newDir = groupDir(newGroupId);
+        if (!Files.exists(oldDir)) return;
+        try {
+            Files.move(oldDir, newDir);
+        } catch (IOException e) {
+            throw new RuntimeException("无法重命名分组目录: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void deleteGroup(String groupId) {
         Path folder = groupDir(groupId);
         if (Files.exists(folder)) {

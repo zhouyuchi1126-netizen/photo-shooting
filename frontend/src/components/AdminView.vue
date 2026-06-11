@@ -526,13 +526,19 @@ function startEdit(group, field) {
 
 async function handleUpdateGroup(groupId) {
   try {
-    await updateGroupApi(groupId, {
+    const payload = {
       title: editForm.title,
       cameraBrand: editForm.cameraBrand || null,
       cameraModel: editForm.cameraModel || null,
       isFilm: editForm.isFilm ? 'true' : 'false',
       filmStock: editForm.filmStock || null
-    });
+    };
+    // 如果标题变了，重新生成 groupId 并通知后端重命名文件夹
+    const newGroupId = generateGroupId(editForm.title);
+    if (newGroupId && newGroupId !== groupId) {
+      payload.newGroupId = newGroupId;
+    }
+    await updateGroupApi(groupId, payload);
     editingGroup.value = null;
     editingField.value = null;
     await loadGroups();

@@ -66,7 +66,7 @@ public class GalleryService {
         return toGroup(album);
     }
 
-    public GalleryGroup updateGroup(String groupId, String title,
+    public GalleryGroup updateGroup(String groupId, String title, String newGroupId,
                                      String cameraBrand, String cameraModel, Boolean isFilm, String filmStock) {
         Album album = albumMapper.selectById(groupId);
         if (album == null) throw new IllegalArgumentException("指定相册不存在");
@@ -74,6 +74,16 @@ public class GalleryService {
         if (cameraBrand != null) album.setCameraBrand(cameraBrand);
         if (cameraModel != null) album.setCameraModel(cameraModel);
         if (isFilm != null) { album.setFilm(isFilm); album.setFilmStock(isFilm ? filmStock : null); }
+
+        // 如果 groupId 变了，重命名文件夹并更新数据库中的 ID
+        if (newGroupId != null && !newGroupId.equals(groupId) && !newGroupId.isBlank()) {
+            storage.renameGroup(groupId, newGroupId);
+            imageMapper.updateAlbumId(groupId, newGroupId);
+            imageMapper.updateFilepathPrefix("/images/" + groupId, "/images/" + newGroupId);
+            albumMapper.updateId(groupId, newGroupId);
+            album.setId(newGroupId);
+        }
+
         albumMapper.update(album);
         return toGroup(album);
     }

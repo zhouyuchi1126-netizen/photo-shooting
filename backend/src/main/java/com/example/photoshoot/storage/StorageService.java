@@ -13,4 +13,7 @@ public interface StorageService {
 
     /** 删除整个分组目录 */
     void deleteGroup(String groupId);
+
+    /** 重命名分组目录 */
+    void renameGroup(String oldGroupId, String newGroupId);
 }

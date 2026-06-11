@@ -13,6 +13,13 @@
     <update id="updateSortOrder">
         UPDATE image SET sort_order = #{order} WHERE album_id = #{albumId} AND filename = #{filename}
     </update>
+    <update id="updateAlbumId">
+        UPDATE image SET album_id = #{newAlbumId} WHERE album_id = #{oldAlbumId}
+    </update>
+    <update id="updateFilepathPrefix">
+        UPDATE image SET filepath = CONCAT(#{newPrefix}, SUBSTRING(filepath, LENGTH(#{oldPrefix}) + 1))
+        WHERE filepath LIKE CONCAT(#{oldPrefix}, '%')
+    </update>
     <delete id="deleteByFilename">
         DELETE FROM image WHERE album_id = #{albumId} AND filename = #{filename}
     </delete>

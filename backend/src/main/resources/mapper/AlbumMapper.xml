@@ -25,6 +25,9 @@
                          film_stock = #{filmStock}
         WHERE id = #{id}
     </update>
+    <update id="updateId">
+        UPDATE album SET id = #{newId} WHERE id = #{oldId}
+    </update>
     <delete id="deleteById">
         DELETE FROM album WHERE id = #{id}
     </delete>
