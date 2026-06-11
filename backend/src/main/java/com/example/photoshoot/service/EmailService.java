@@ -11,13 +11,16 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final String adminEmail;
+    private final String fromEmail;
     private String currentCode = "";
     private long codeExpireTime = 0;
 
     public EmailService(JavaMailSender mailSender,
-                        @Value("${app.admin.email}") String adminEmail) {
+                        @Value("${app.admin.email}") String adminEmail,
+                        @Value("${spring.mail.username}") String fromEmail) {
         this.mailSender = mailSender;
         this.adminEmail = adminEmail;
+        this.fromEmail = fromEmail;
     }
 
     public String generateAndSendCode() {
@@ -27,6 +30,7 @@ public class EmailService {
         codeExpireTime = System.currentTimeMillis() + 5 * 60 * 1000;
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromEmail);
             msg.setTo(adminEmail);
             msg.setSubject("管理员登录验证码");
             msg.setText("您的验证码是: " + currentCode + "\n有效期5分钟。");

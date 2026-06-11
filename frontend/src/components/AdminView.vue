@@ -995,16 +995,21 @@ onUnmounted(() => {
 .auth-view { display: grid; place-items: center; min-height: 70vh; }
 .auth-card { width: min(420px, 100%); box-sizing: border-box; border: 1px solid #e6e6e6; padding: 2rem; border-radius: 8px; box-shadow: 0 0 24px rgba(0,0,0,0.04); }
 .auth-card h1 { margin: 0 0 1rem; font-size: 2rem; text-align: center; }
-.auth-desc { margin: 0 0 1rem; color: #555; font-size: 0.9rem; text-align: center; }
-.login-form { display: grid; gap: 1rem; }
+.auth-desc { margin: 0 0 1.25rem; color: #555; font-size: 0.9rem; text-align: center; }
+.login-form { display: grid; gap: 0.75rem; }
 .login-form .submit-btn {
-  width: 100%; padding: 0.85rem 1rem; border: none; border-radius: 6px;
-  background: #111; color: white; font-size: 1rem; cursor: pointer;
+  width: 100%; padding: 0.9rem 1rem; border: none; border-radius: 6px;
+  background: #111; color: white; font-size: 1rem; cursor: pointer; line-height: 1.4;
+  transition: opacity 0.15s;
 }
 .login-form .submit-btn:hover { opacity: 0.85; }
 .login-form .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-loading { margin-right: 4px; }
-.code-input :deep(.el-input__inner) { text-align: center; font-size: 1.2rem; letter-spacing: 0.3em; }
+.code-input { height: 48px; }
+.code-input :deep(.el-input__wrapper) { border-radius: 6px; height: 48px; }
+.code-input :deep(.el-input__inner) {
+  text-align: center; font-size: 1.25rem; letter-spacing: 0.4em; height: 48px;
+}
 .help-text { margin-top: 1rem; text-align: center; font-size: 0.95rem; }
 .highlight-link { color: #111; font-weight: 600; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
 .highlight-link:hover { border-bottom-color: #111; }
