@@ -1,4 +1,4 @@
-import { createWebHistory, createRouter } from 'vue-router';
+import { createWebHashHistory, createRouter } from 'vue-router';
 import LoginView from '../components/LoginView.vue';
 import RegisterView from '../components/RegisterView.vue';
 import HomeView from '../components/HomeView.vue';
@@ -14,7 +14,7 @@ const routes = [
   { path: '/admin', name: 'Admin', component: AdminView }
 ];
 
-const router = createRouter({ history: createWebHistory(), routes });
+const router = createRouter({ history: createWebHashHistory(), routes });
 
 router.beforeEach((to, from, next) => {
   const user = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
