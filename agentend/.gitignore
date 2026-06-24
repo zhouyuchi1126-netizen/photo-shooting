@@ -1,0 +1,32 @@
+### Java ###
+*.class
+*.jar
+*.war
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### Maven ###
+log/
+tmp/
+
+### IDE ###
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+*.swo
+*~
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Env ###
+.env
+.env.local
+*.log
