@@ -105,28 +105,34 @@ function onGlobalDragStart(e) {
   }
 }
 onMounted(() => {
+  loadUser();
+  window.addEventListener('auth-changed', loadUser);
   document.addEventListener('contextmenu', onGlobalContextMenu);
   document.addEventListener('dragstart', onGlobalDragStart);
   document.addEventListener('click', onDocClick);
 });
 onUnmounted(() => {
+  window.removeEventListener('auth-changed', loadUser);
   document.removeEventListener('contextmenu', onGlobalContextMenu);
   document.removeEventListener('dragstart', onGlobalDragStart);
   document.removeEventListener('click', onDocClick);
 });
 
-const user = computed(() => {
+const userData = ref(null);
+const user = computed(() => userData.value);
+
+function loadUser() {
   try {
-    route.fullPath;
     const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
+    userData.value = raw ? JSON.parse(raw) : null;
   } catch {
-    return null;
+    userData.value = null;
   }
-});
+}
 
 function logout() {
   localStorage.removeItem('user');
+  userData.value = null;
   router.push('/home');
 }
 </script>

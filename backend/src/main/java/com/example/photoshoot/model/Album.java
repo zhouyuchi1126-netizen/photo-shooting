@@ -10,6 +10,7 @@ public class Album {
     private String cameraModel;
     private boolean isFilm;
     private String filmStock;
+    private int sortOrder;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -29,4 +30,6 @@ public class Album {
     public void setFilm(boolean film) { isFilm = film; }
     public String getFilmStock() { return filmStock; }
     public void setFilmStock(String filmStock) { this.filmStock = filmStock; }
+    public int getSortOrder() { return sortOrder; }
+    public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
 }

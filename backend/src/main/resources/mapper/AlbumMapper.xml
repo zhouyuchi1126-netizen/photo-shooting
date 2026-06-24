@@ -3,12 +3,14 @@
 <mapper namespace="com.example.photoshoot.mapper.AlbumMapper">
     <select id="selectAll" resultType="com.example.photoshoot.model.Album">
         SELECT id, title, cover_image AS coverImage, created_at AS createdAt, shoot_date AS shootDate,
-               camera_brand AS cameraBrand, camera_model AS cameraModel, is_film AS isFilm, film_stock AS filmStock
-        FROM album ORDER BY created_at DESC
+               camera_brand AS cameraBrand, camera_model AS cameraModel, is_film AS isFilm, film_stock AS filmStock,
+               sort_order AS sortOrder
+        FROM album ORDER BY sort_order ASC, created_at ASC
     </select>
     <select id="selectById" resultType="com.example.photoshoot.model.Album">
         SELECT id, title, cover_image AS coverImage, created_at AS createdAt, shoot_date AS shootDate,
-               camera_brand AS cameraBrand, camera_model AS cameraModel, is_film AS isFilm, film_stock AS filmStock
+               camera_brand AS cameraBrand, camera_model AS cameraModel, is_film AS isFilm, film_stock AS filmStock,
+               sort_order AS sortOrder
         FROM album WHERE id = #{id}
     </select>
     <insert id="insert">
@@ -27,6 +29,12 @@
     </update>
     <update id="updateId">
         UPDATE album SET id = #{newId} WHERE id = #{oldId}
+    </update>
+    <select id="selectMaxSortOrder" resultType="java.lang.Integer">
+        SELECT MAX(sort_order) FROM album
+    </select>
+    <update id="updateSortOrder">
+        UPDATE album SET sort_order = #{sortOrder} WHERE id = #{id}
     </update>
     <delete id="deleteById">
         DELETE FROM album WHERE id = #{id}

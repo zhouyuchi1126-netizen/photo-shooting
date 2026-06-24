@@ -106,12 +106,15 @@ const hasPrev = computed(() => selectedIndex.value !== null && (selectedIndex.va
 const hasNext = computed(() => selectedIndex.value !== null && (selectedIndex.value < currentGroup.value.images.length - 1 || groups.value.findIndex((item) => item.id === currentGroupId.value) < groups.value.length - 1));
 
 // --- 管理员状态 ---
-const isAdmin = computed(() => {
+const adminFlag = ref(false);
+const isAdmin = computed(() => adminFlag.value);
+
+function checkAdminFlag() {
   try {
     const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw).role === 'admin' : false;
-  } catch { return false; }
-});
+    adminFlag.value = raw ? JSON.parse(raw).role === 'admin' : false;
+  } catch { adminFlag.value = false; }
+}
 const showUpload = ref(false);
 
 const uploading = ref(false);
@@ -279,7 +282,10 @@ function onWheel(event) {
   changePage(event.deltaY);
 }
 
-onMounted(loadGroups);
+onMounted(() => {
+  checkAdminFlag();
+  loadGroups();
+});
 
 watch(
   () => route.params.groupId,

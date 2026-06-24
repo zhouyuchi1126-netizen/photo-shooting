@@ -16,3 +16,4 @@ backend/target/
 
 # User uploaded images (not source code)
 backend/images/
+test-results/

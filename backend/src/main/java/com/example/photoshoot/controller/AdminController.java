@@ -166,4 +166,24 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    @PutMapping("/groups/reorder")
+    public ResponseEntity<?> reorderGroups(
+            @RequestHeader(value = "X-User-Role", defaultValue = "user") String role,
+            @RequestBody Map<String, Object> payload) {
+        if (!"admin".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "无权限"));
+        }
+        @SuppressWarnings("unchecked")
+        List<String> groupIds = (List<String>) payload.get("groupIds");
+        if (groupIds == null || groupIds.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "相册列表不能为空"));
+        }
+        try {
+            galleryService.reorderAlbums(groupIds);
+            return ResponseEntity.ok(Map.of("message", "相册排序已保存"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }

@@ -53,10 +53,28 @@
     <!-- 分组列表 -->
     <div class="group-table-wrap">
       <h2 class="section-heading">当前分类</h2>
-      <div class="group-item" v-for="group in groups" :key="group.id">
+      <div
+        class="group-item"
+        :class="{ 'drag-over': albumDragOverId === group.id }"
+        v-for="group in groups"
+        :key="group.id"
+        draggable="true"
+        @dragstart="onAlbumDragStart(group, $event)"
+        @dragover.prevent="onAlbumDragOver(group.id)"
+        @dragleave="albumDragOverId = null"
+        @drop="onAlbumDrop(group)"
+      >
 
         <!-- 基本信息行 -->
         <div class="group-info">
+          <button class="drag-handle" data-tip="拖动排序" tabindex="-1">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8">
+              <line x1="8" y1="6" x2="16" y2="6"/>
+              <line x1="8" y1="10" x2="16" y2="10"/>
+              <line x1="8" y1="14" x2="16" y2="14"/>
+              <line x1="8" y1="18" x2="16" y2="18"/>
+            </svg>
+          </button>
           <div class="group-meta">
             <div class="meta-row">
               <h3
@@ -245,7 +263,8 @@ import {
   deleteGroup as deleteGroupApi,
   deleteImage as deleteImageApi,
   setCover as setCoverApi,
-  reorderImages as reorderImagesApi
+  reorderImages as reorderImagesApi,
+  reorderGroups as reorderGroupsApi
 } from '../api/gallery';
 import { sendAdminCode, verifyAdminCode } from '../api/auth';
 import {
@@ -260,13 +279,17 @@ const editingGroup = ref(null);
 const editingField = ref(null);
 
 const adminAuthKey = ref(0);
-const isAdminAuthed = computed(() => {
-  adminAuthKey.value; // force reactivity on localStorage changes
+const adminAuthed = ref(false);
+const isAdminAuthed = computed(() => adminAuthed.value);
+
+function checkAdminAuth() {
   try {
     const u = JSON.parse(localStorage.getItem('user'));
-    return u?.role === 'admin';
-  } catch { return false; }
-});
+    adminAuthed.value = u?.role === 'admin';
+  } catch {
+    adminAuthed.value = false;
+  }
+}
 
 const sending = ref(false);
 const verifying = ref(false);
@@ -292,7 +315,8 @@ async function handleVerifyCode() {
     const res = await verifyAdminCode(adminCode.value);
     if (res.success) {
       localStorage.setItem('user', JSON.stringify(res));
-      adminAuthKey.value++;
+      checkAdminAuth();
+      window.dispatchEvent(new CustomEvent('auth-changed'));
       ElMessage.success('登录成功');
       await loadGroups();
     } else {
@@ -326,6 +350,39 @@ const CONCURRENCY = 3;
 const allSelected = computed(() => groupImages.value.length > 0 && selectedUrls.value.size === groupImages.value.length);
 function toggleAll() {
   selectedUrls.value = allSelected.value ? new Set() : new Set(groupImages.value);
+}
+
+/* ---- 相册拖拽排序 ---- */
+const albumDragFromId = ref(null);
+const albumDragOverId = ref(null);
+
+function onAlbumDragStart(group, e) {
+  albumDragFromId.value = group.id;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onAlbumDragOver(id) {
+  albumDragOverId.value = id;
+}
+
+async function onAlbumDrop(targetGroup) {
+  albumDragOverId.value = null;
+  const fromId = albumDragFromId.value;
+  if (!fromId || fromId === targetGroup.id) return;
+
+  const arr = [...groups.value];
+  const fromIdx = arr.findIndex(g => g.id === fromId);
+  const toIdx = arr.findIndex(g => g.id === targetGroup.id);
+  const [moved] = arr.splice(fromIdx, 1);
+  arr.splice(toIdx, 0, moved);
+  groups.value = arr;
+
+  const groupIds = arr.map(g => g.id);
+  try {
+    await reorderGroupsApi(groupIds);
+  } catch (e) {
+    console.error('相册排序保存失败', e);
+  }
 }
 
 /* ---- 拖拽排序（放下即保存） ---- */
@@ -648,6 +705,7 @@ async function handleBatchDelete(groupId) {
 }
 
 onMounted(() => {
+  checkAdminAuth();
   loadGroups();
   document.addEventListener('click', onDocumentClick);
 });
@@ -710,7 +768,17 @@ onUnmounted(() => {
   visibility: hidden; height: 0; overflow: visible;
 }
 
-.group-item { border: 1px solid #ececec; }
+.group-item { border: 1px solid #ececec; cursor: default; }
+.group-item.drag-over { border-color: #111; border-style: dashed; background: #f5f5f5; }
+
+.drag-handle {
+  width: 24px; height: 24px; padding: 0; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: transparent; color: #ccc; border: none;
+  cursor: grab; transition: color 0.15s;
+}
+.drag-handle:hover { color: #555; }
+.drag-handle:active { cursor: grabbing; }
 
 /* --- 预览图条 --- */
 .preview-strip {

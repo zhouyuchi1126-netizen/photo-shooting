@@ -62,6 +62,9 @@ public class GalleryService {
         album.setCameraModel(cameraModel);
         album.setFilm(isFilm != null && isFilm);
         album.setFilmStock(album.isFilm() ? filmStock : null);
+        // 新相册排到最后
+        Integer maxOrder = albumMapper.selectMaxSortOrder();
+        album.setSortOrder((maxOrder != null ? maxOrder : 0) + 10);
         albumMapper.insert(album);
         return toGroup(album);
     }
@@ -154,6 +157,16 @@ public class GalleryService {
         if (album == null) throw new IllegalArgumentException("指定相册不存在");
         for (int i = 0; i < filenames.size(); i++) {
             imageMapper.updateSortOrder(groupId, filenames.get(i), i);
+        }
+    }
+
+    /**
+     * 重新排序相册
+     * @param orderedIds 按新顺序排列的相册 ID 列表
+     */
+    public void reorderAlbums(List<String> orderedIds) {
+        for (int i = 0; i < orderedIds.size(); i++) {
+            albumMapper.updateSortOrder(orderedIds.get(i), (i + 1) * 10);
         }
     }
 

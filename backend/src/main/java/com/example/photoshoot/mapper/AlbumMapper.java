@@ -12,4 +12,6 @@ public interface AlbumMapper {
     void update(Album album);
     void deleteById(@Param("id") String id);
     void updateId(@Param("oldId") String oldId, @Param("newId") String newId);
+    void updateSortOrder(@Param("id") String id, @Param("sortOrder") int sortOrder);
+    Integer selectMaxSortOrder();
 }

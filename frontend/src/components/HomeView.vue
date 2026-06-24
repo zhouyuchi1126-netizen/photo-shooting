@@ -37,7 +37,8 @@ function sortGroups(groups, pref) {
   if (pref === 'name-asc') hasImg.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
   else if (pref === 'name-desc') hasImg.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
   else if (pref === 'time-asc') hasImg.sort((a, b) => (sortKey(a) || '').localeCompare(sortKey(b) || ''));
-  else hasImg.sort((a, b) => (sortKey(b) || '').localeCompare(sortKey(a) || ''));
+  else if (pref === 'time-desc') hasImg.sort((a, b) => (sortKey(b) || '').localeCompare(sortKey(a) || ''));
+  // 'default' 不做排序，使用后端 sort_order 顺序
   return [...hasImg, ...empty];
 }
 
@@ -45,7 +46,7 @@ async function loadGroups() {
   try {
     const groups = await getGroups();
     if (groups && groups.length) {
-      const pref = localStorage.getItem('sortPreference') || 'time-desc';
+      const pref = localStorage.getItem('sortPreference') || 'default';
       sections.value = sortGroups(groups, pref);
     }
   } catch (error) {
